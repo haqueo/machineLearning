@@ -1,5 +1,8 @@
 setwd("/Users/Omar/Documents/Year4/machineLearning/coursework1")
 
+
+library(rARPACK)
+
 # I load the raw csv's
 faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Inputs.csv",head=FALSE)
 faces.train.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Labels.csv",head=FALSE)
@@ -14,10 +17,7 @@ image(avg.face)
 
 
 find.pca.basis <- function(M,X, return.full.results = FALSE){
-  
-  M <- 5
-  X <- faces.train.inputs
-  
+
   n <- dim(X)[1] # The number of images
   
   # Turn the input data into a matrix and transpose it
@@ -74,7 +74,13 @@ image(matrix(as.numeric(faces.train.inputs[1,]), nrow = 112),useRaster=TRUE, axe
 # at which we can choose a good approximation? Discuss how we should choose the appropriate 
 # dimensionality of the approximation.
 
-full.results <- find.pca.basis(319,faces.train.inputs)
+# First I calculate the full pca basis (and all the assosciated eigenvalues)
+full.results <- find.pca.basis(320,faces.train.inputs,return.full.results = TRUE)
+
+# the mean square error is equal to the total variance minus the sum of the eigenvalues for 
+# components not used (and itself)
+mses <- (cumsum(full.results$values)[length(full.results$values)] - cumsum(full.results$values) )
+plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 
 ## Question 4
 # Write a function implementing a K-nearest neighbour classifier and investigate its use on 
