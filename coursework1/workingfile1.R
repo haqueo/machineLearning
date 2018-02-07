@@ -48,13 +48,15 @@ for (i in 1:5){
   
   image(matrix(eigenbasis[,i], nrow = 112),useRaster=TRUE, axes=FALSE)
 }
+par(mfrow=c(1,1))
 
-# question 2 • Choose a single face and project it into a PCA basis 
+# question 2 Choose a single face and project it into a PCA basis 
 # for dimension M = 5, 10, 50, then plot the results.##
 
 dimensions <- c(5,10,50)
 single.face <- 1
-i <- 5
+means <- as.vector(avg.face)
+
 for (i in dimensions){
   
   eigenbasis <- find.pca.basis(i,faces.train.inputs)
@@ -88,7 +90,10 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # algorithm for this particular application.
 
 
-
+k.nearest.neighbours <- function(training.data.matrix, training.data.labels ){
+  
+  
+}
 
 
 
