@@ -93,7 +93,7 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # algorithm for this particular application.
 
 k.nearest.neighbours <- function(training.data.matrix, training.data.labels, testing.data.matrix,
-                                 K = 10, distance.type = "euclid"){
+                                 K = 10, distance.type = "euclidean"){
   
   # Make sure all the data is numeric
   training.data.matrix <- data.matrix(training.data.matrix)
@@ -123,7 +123,72 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels, tes
 }
 
 
-classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs,training.data.labels = faces.train.label, testing.data.matrix = faces.test.inputs)
+# making this work for this specific case
+classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs,training.data.labels = faces.train.label, testing.data.matrix = faces.test.inputs,K=1)
+classes.actual <- as.integer(faces.test.label)
+accuracy <- length(which(classes == classes.actual)) / length(classes.actual)
+## 75% accuracy with no preprocessing, default K= 4
+## 91.25% accuracy with K = 2
+## 93.75% accuracy with K = 3
+## 95% accuracy with K = 1
+
+## TRY pca preprocessing
+
+eigenbasis <- find.pca.basis(50,faces.train.inputs)
+
+faces.train.new.basis <- lapply(X = c(1:320),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
+faces.train.new.basis <- do.call("rbind",faces.train.new.basis)
+
+faces.test.new.basis <- lapply(X = c(1:80),FUN=function(x) t(as.numeric(faces.test.inputs[x,]) - means) %*% eigenbasis)
+faces.test.new.basis <- do.call("rbind",faces.test.new.basis)
+
+classes <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis,
+                                training.data.labels = faces.train.label, 
+                                testing.data.matrix = faces.test.new.basis,K=5)
+classes.actual <- as.integer(faces.test.label)
+accuracy <- length(which(classes == classes.actual)) / length(classes.actual)
+print(accuracy)
+
+
+## k = 1, 96.25%
+## k = 2, 92.5%
+## k = 3, 93.75%
+## k = 4, 91.25%
+## k = 5, 92.5%
+
+## now basis of size 50
+# k = 1, 95%
+# k = 2, 95%
+# k = 3, 93.75%
+# k = 4, 93.75%
+# k = 5, 91.25%
+lapply(X = c(1:2),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
+
+projection.vector <- eigenbasis %*% as.numeric(as.list(projection.vals))
+
+faces.train.inputs[c(1,2,3),]
+
+
+##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ## testing and other stuff 
+
+
 
 training.fake.matrix <- rbind(c(1,2,4,5),c(0,5,10,100),c(1000,2000,3000,4000),c(1,1,1,1),c(2,2,2,2))
 training.fake.labels <- rbind(c(1,2,1,2,1))
