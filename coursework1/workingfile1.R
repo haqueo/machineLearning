@@ -6,6 +6,9 @@ library(rARPACK)
 # I load the raw csv's
 faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Inputs.csv",head=FALSE)
 faces.train.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Labels.csv",head=FALSE)
+faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Test_Inputs.csv",head=FALSE)
+faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Test_Labels.csv",head=FALSE)
+
 
 # I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value of pixels corresponding to each image
 # .. I need to use lapply again on the result because apply gives the matrices in a weird form
@@ -89,15 +92,50 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # the face recognition dataset. Make some recommendations regarding how to best set up this 
 # algorithm for this particular application.
 
+training.fake.matrix <- rbind(c(1,2,4,5),c(0,5,10,100),c(1000,2000,3000,4000),c(1,1,1,1),c(2,2,2,2))
+training.fake.labels <- rbind(c(1,2,1,2,1))
+testing.fake.matrix <- rbind(c(1,2,10,100),c(9,8,7,6))
 
-k.nearest.neighbours <- function(training.data.matrix, training.data.labels ){
+
+
+
+k.nearest.neighbours <- function(training.data.matrix, training.data.labels, testing.data.matrix,
+                                 K = 4, distance = "euclid"){
   
+  classifiers <- c()
+  
+  for (i in 1:dim(testing.data.matrix)[1]){
+    
+    all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[i,],x),method="euclidean"))
+    print(all.distances)
+    sorted.distances <- sort(all.distances,index.return=TRUE)
+    classification <- sort(tabulate(training.data.labels[sorted.distances$ix[1:K]]), index.return=TRUE,decreasing = TRUE)$ix[1]
+    classifiers <- c(classifiers,classification)
+    
+  }
+  
+  return(classifiers)
   
 }
 
 
 
+test <- k.nearest.neighbours(training.fake.matrix,training.fake.labels,testing.fake.matrix,K=3,distance="euclid")
 
 
 
 
+
+
+K = 3
+
+training.data.matrix <- training.fake.matrix
+training.data.labels <- training.fake.labels
+testing.data.matrix <- testing.fake.matrix
+
+all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[1,],x),method="euclidean"))
+
+sorted.distances <- sort(all.distances,index.return=TRUE)
+training.data.labels[sorted.distances$ix[1:K]]
+classification <- sort(tabulate(training.data.labels[sorted.distances$ix[1:K]]), index.return=TRUE,decreasing = TRUE)$ix[1]
+classifiers <- c(classifiers,classification)
