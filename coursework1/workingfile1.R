@@ -92,26 +92,30 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # the face recognition dataset. Make some recommendations regarding how to best set up this 
 # algorithm for this particular application.
 
-training.fake.matrix <- rbind(c(1,2,4,5),c(0,5,10,100),c(1000,2000,3000,4000),c(1,1,1,1),c(2,2,2,2))
-training.fake.labels <- rbind(c(1,2,1,2,1))
-testing.fake.matrix <- rbind(c(1,2,10,100),c(9,8,7,6))
-
-
-
-
 k.nearest.neighbours <- function(training.data.matrix, training.data.labels, testing.data.matrix,
-                                 K = 4, distance = "euclid"){
+                                 K = 10, distance.type = "euclid"){
   
+  # Make sure all the data is numeric
+  training.data.matrix <- data.matrix(training.data.matrix)
+  testing.data.matrix <- data.matrix(testing.data.matrix)
+  training.data.labels <- as.numeric(training.data.labels)
+  
+  # Initialise the list which will take the classifications
   classifiers <- c()
   
+  # iterate through every row of the testing matrix
   for (i in 1:dim(testing.data.matrix)[1]){
     
-    all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[i,],x),method="euclidean"))
-    print(all.distances)
+    # compute the distance of this row of the testing matrix to every other row in the training set
+    all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[i,],x),method=distance.type))
+    # sort these distances in increasing order.
     sorted.distances <- sort(all.distances,index.return=TRUE)
+    # Look at the k closest rows in the training set to this testing row. Whichever classification comes
+    # up the most - is the classification we will give this particular row.
     classification <- sort(tabulate(training.data.labels[sorted.distances$ix[1:K]]), index.return=TRUE,decreasing = TRUE)$ix[1]
+    # add it to the list of classifiers
     classifiers <- c(classifiers,classification)
-    
+
   }
   
   return(classifiers)
@@ -119,6 +123,11 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels, tes
 }
 
 
+classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs,training.data.labels = faces.train.label, testing.data.matrix = faces.test.inputs)
+
+training.fake.matrix <- rbind(c(1,2,4,5),c(0,5,10,100),c(1000,2000,3000,4000),c(1,1,1,1),c(2,2,2,2))
+training.fake.labels <- rbind(c(1,2,1,2,1))
+testing.fake.matrix <- rbind(c(1,2,10,100),c(9,8,7,6))
 
 test <- k.nearest.neighbours(training.fake.matrix,training.fake.labels,testing.fake.matrix,K=3,distance="euclid")
 
