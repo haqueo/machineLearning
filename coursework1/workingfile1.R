@@ -13,19 +13,15 @@ avg.face <- Reduce('+', faces.train.inputs.cleaned) / length(faces.train.inputs.
 image(avg.face)
 
 
-find.pca.basis <- function(M,X){
+find.pca.basis <- function(M,X, return.full.results = FALSE){
+  
+  M <- 5
+  X <- faces.train.inputs
   
   n <- dim(X)[1] # The number of images
   
-  X <- faces.train.inputs
-  M <- 10
-  # M - the PCA basis size
-  # X - the matrix containing the training set
-  
   # Turn the input data into a matrix and transpose it
   X.data.matrix <- data.matrix(t(X))
-  
-  
   
   # Centralise the data matrix
   means <- rowMeans(X.data.matrix) # calculate row means
@@ -37,18 +33,60 @@ find.pca.basis <- function(M,X){
   # Now I need to compute the first M eigenvectors/ eigenvalues using the R package rARPACK
   results <- eigs_sym(covariance.matrix,k=M,which="LM")
   
-  return(results$vectors)
-  
-  # return the eigenbasis
-  image(matrix(as.numeric(faces.train.inputs[1,][c(1:10304)]), nrow = 112),useRaster=TRUE, axes=FALSE)
-  # Let's see the first eigenface
-  
-  
-  dim(ev$vectors[1,] %*% data.matrix(X))
-  
-  
+  if (return.full.results){
+    return(results)
+  } else{
+    return(results$vectors)
+  }
   
 }
 
-image(matrix(results$vectors[,1], nrow = 112),useRaster=TRUE, axes=FALSE)
+eigenbasis <- find.pca.basis(5,faces.train.inputs)
+
+par(mfrow=c(2,3))
+for (i in 1:5){
+  
+  image(matrix(eigenbasis[,i], nrow = 112),useRaster=TRUE, axes=FALSE)
+}
+
+# question 2 • Choose a single face and project it into a PCA basis 
+# for dimension M = 5, 10, 50, then plot the results.##
+
+dimensions <- c(5,10,50)
+single.face <- 1
+i <- 5
+for (i in dimensions){
+  
+  eigenbasis <- find.pca.basis(i,faces.train.inputs)
+  projection.vals <- t(as.numeric(faces.train.inputs[single.face,]) - means) %*% eigenbasis
+  projection.vector <- eigenbasis %*% as.numeric(as.list(projection.vals))
+  
+  
+  image(matrix(projection.vector, nrow = 112),useRaster=TRUE, axes=FALSE)
+}
+
+image(matrix(as.numeric(faces.train.inputs[1,]), nrow = 112),useRaster=TRUE, axes=FALSE)
+
+
+## Question 3
+# Plot a graph of the mean squared error of each lower dimensional approximation of this 
+# chosen face, with the dimensionality plotted along the x-axis. Is there a clear point 
+# at which we can choose a good approximation? Discuss how we should choose the appropriate 
+# dimensionality of the approximation.
+
+full.results <- find.pca.basis(319,faces.train.inputs)
+
+## Question 4
+# Write a function implementing a K-nearest neighbour classifier and investigate its use on 
+# the face recognition dataset. Make some recommendations regarding how to best set up this 
+# algorithm for this particular application.
+
+
+
+
+
+
+
+
+
 
