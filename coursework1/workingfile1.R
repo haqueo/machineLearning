@@ -6,18 +6,27 @@ library(philentropy)
 
 
 # I load the raw csv's
-faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Inputs.csv",head=FALSE)
-faces.train.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Labels.csv",head=FALSE)
-faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Test_Inputs.csv",head=FALSE)
-faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Test_Labels.csv",head=FALSE)
+faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
+                               Faces_Train_Inputs.csv",head=FALSE)
+faces.train.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
+                              Faces_Train_Labels.csv",head=FALSE)
+faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
+                              Faces_Test_Inputs.csv",head=FALSE)
+faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
+                             Faces_Test_Labels.csv",head=FALSE)
 
 
-# I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value of pixels corresponding to each image
-# .. I need to use lapply again on the result because apply gives the matrices in a weird form
-faces.train.inputs.cleaned <- lapply(apply(X=faces.train.inputs, MARGIN=1, function(x) list(matrix(as.numeric(x), nrow = 112))), "[[", 1)
+# I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value 
+# of pixels corresponding to each image .. I need to use lapply again on the 
+#result because apply gives the matrices in a weird form
+faces.train.inputs.cleaned <- lapply(apply(X=faces.train.inputs, 
+                                           MARGIN=1, 
+                                           function(x) list(matrix(as.numeric(x), 
+                                           nrow = 112))), "[[", 1)
 
 # Here I calculate the average face
-avg.face <- Reduce('+', faces.train.inputs.cleaned) / length(faces.train.inputs.cleaned)
+avg.face <- Reduce('+', faces.train.inputs.cleaned) / 
+  length(faces.train.inputs.cleaned)
 image(avg.face)
 
 
@@ -35,7 +44,8 @@ find.pca.basis <- function(M,X, return.full.results = FALSE){
   # Calculate the covariance matrix as defined in lectures
   covariance.matrix <- (data.matrix.centralised %*% t(data.matrix.centralised)) / n
   
-  # Now I need to compute the first M eigenvectors/ eigenvalues using the R package rARPACK
+  # Now I need to compute the first M eigenvectors/ eigenvalues using the 
+  # R package rARPACK
   results <- eigs_sym(covariance.matrix,k=M,which="LM")
   
   if (return.full.results){
@@ -50,36 +60,38 @@ eigenbasis <- find.pca.basis(5,faces.train.inputs)
 
 par(mfrow=c(2,3))
 for (i in 1:5){
-  
-  image(matrix(eigenbasis[,i], nrow = 112),useRaster=TRUE, axes=FALSE)
+  # eigenbasis[,i] corresponds to the i'th eigenvector.
+  image(matrix(eigenbasis[,i], nrow = 112),useRaster=TRUE, axes=FALSE,main=i)
 }
 par(mfrow=c(1,1))
 
 # question 2 Choose a single face and project it into a PCA basis 
 # for dimension M = 5, 10, 50, then plot the results.##
 
+# initialise the dimensions and face used.
 dimensions <- c(5,10,50)
 single.face <- 1
-means <- as.vector(avg.face)
+means <- as.vector(avg.face) # convert the mean face back into a vector
 
+# iterate through the dimensions considered
 for (i in dimensions){
   
+  # compute the eigenbasis using the function created
   eigenbasis <- find.pca.basis(i,faces.train.inputs)
-  projection.vals <- t(as.numeric(faces.train.inputs[single.face,]) - means) %*% eigenbasis
+  # calculate the projection values in this pca basis
+  projection.vals <- t(as.numeric(faces.train.inputs[single.face,]) - 
+                         means) %*% eigenbasis
+  # calculate the actual face in this basis
   projection.vector <- eigenbasis %*% as.numeric(as.list(projection.vals))
   
-  
-  
-  
-  # the mean in this basis...
-  projection.vals.mean <- t(as.numeric(faces.train.inputs[single.face,]) - means) %*% eigenbasis
-  
-  image(matrix(projection.vector, nrow = 112),useRaster=TRUE, axes=FALSE)
+  # carry out the plot
+  image(matrix(projection.vector, nrow = 112),useRaster=TRUE, 
+        axes=FALSE,main=paste("dimension",i,sep=" "))
 }
 
-
-
-image(matrix(as.numeric(faces.train.inputs[single.face,]), nrow = 112),useRaster=TRUE, axes=FALSE)
+# and here's the original image
+image(matrix(as.numeric(faces.train.inputs[single.face,]), nrow = 112), 
+      useRaster=TRUE, axes=FALSE, main="Original Image")
 
 
 ## Question 3
