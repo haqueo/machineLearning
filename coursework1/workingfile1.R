@@ -2,6 +2,8 @@ setwd("/Users/Omar/Documents/Year4/machineLearning/coursework1")
 
 
 library(rARPACK)
+library(philentropy)
+
 
 # I load the raw csv's
 faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/Faces_Train_Inputs.csv",head=FALSE)
@@ -67,10 +69,17 @@ for (i in dimensions){
   projection.vector <- eigenbasis %*% as.numeric(as.list(projection.vals))
   
   
+  
+  
+  # the mean in this basis...
+  projection.vals.mean <- t(as.numeric(faces.train.inputs[single.face,]) - means) %*% eigenbasis
+  
   image(matrix(projection.vector, nrow = 112),useRaster=TRUE, axes=FALSE)
 }
 
-image(matrix(as.numeric(faces.train.inputs[1,]), nrow = 112),useRaster=TRUE, axes=FALSE)
+
+
+image(matrix(as.numeric(faces.train.inputs[single.face,]), nrow = 112),useRaster=TRUE, axes=FALSE)
 
 
 ## Question 3
@@ -93,7 +102,7 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # algorithm for this particular application.
 
 k.nearest.neighbours <- function(training.data.matrix, training.data.labels, testing.data.matrix,
-                                 K = 10, distance.type = "euclidean"){
+                                 K = 4, distance.type = "squared_euclidean"){
   
   # Make sure all the data is numeric
   training.data.matrix <- data.matrix(training.data.matrix)
@@ -107,13 +116,29 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels, tes
   for (i in 1:dim(testing.data.matrix)[1]){
     
     # compute the distance of this row of the testing matrix to every other row in the training set
-    all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[i,],x),method=distance.type))
+    all.distances <- apply(training.data.matrix, MARGIN=1, 
+                           function(x) distance(rbind(testing.data.matrix[i,],x), 
+                                                method=distance.type))
     # sort these distances in increasing order.
     sorted.distances <- sort(all.distances,index.return=TRUE)
+    
     # Look at the k closest rows in the training set to this testing row. Whichever classification comes
     # up the most - is the classification we will give this particular row.
-    classification <- sort(tabulate(training.data.labels[sorted.distances$ix[1:K]]), index.return=TRUE,decreasing = TRUE)$ix[1]
-    # add it to the list of classifiers
+    all.counts <- tabulate(training.data.labels[sorted.distances$ix[1:K]])
+    sorted.counts <- sort(all.counts, index.return=TRUE, decreasing=TRUE)
+    
+    ## these are all the voters which share the maximum score
+    max.votes <- which(sorted.counts$x == sorted.counts$x[1])
+    
+    if (length(max.votes) > 1){
+      # if it's a split vote, randomly select one.
+      voter <- sample(1:length(max.votes),size=1)
+    } else {
+      # else, there's only one.
+      voter <- 1
+    }
+    # set the classification.
+    classification <- sorted.counts$ix[voter]
     classifiers <- c(classifiers,classification)
 
   }
@@ -124,17 +149,81 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels, tes
 
 
 # making this work for this specific case
-classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs,training.data.labels = faces.train.label, testing.data.matrix = faces.test.inputs,K=1)
+classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs, 
+                                training.data.labels = faces.train.label, 
+                                testing.data.matrix = faces.test.inputs,K=5)
 classes.actual <- as.integer(faces.test.label)
 accuracy <- length(which(classes == classes.actual)) / length(classes.actual)
-## 75% accuracy with no preprocessing, default K= 4
+print(accuracy)
+## 91.25% accuracy with no preprocessing, default K= 4
 ## 91.25% accuracy with K = 2
 ## 93.75% accuracy with K = 3
 ## 95% accuracy with K = 1
 
+
+
+
+
 ## TRY pca preprocessing
 
-eigenbasis <- find.pca.basis(50,faces.train.inputs)
+eigenbasis <- find.pca.basis(200,faces.train.inputs)
+
+faces.train.new.basis <- lapply(X = c(1:320),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
+faces.train.new.basis <- do.call("rbind",faces.train.new.basis)
+
+faces.test.new.basis <- lapply(X = c(1:80),FUN=function(x) t(as.numeric(faces.test.inputs[x,]) - means) %*% eigenbasis)
+faces.test.new.basis <- do.call("rbind",faces.test.new.basis)
+
+
+
+accuracy.euc.list <- c()
+accuracy.man.list <- c()
+accuracy.squaredeuc.list <- c()
+
+for (i in 1:8){
+  
+  classes.euc <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis , 
+                                      training.data.labels = faces.train.label, 
+                                      testing.data.matrix = faces.test.new.basis,K=i, distance.type = "euclidean")
+  classes.man <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
+                                      training.data.labels = faces.train.label, 
+                                      testing.data.matrix = faces.test.new.basis,K=i, distance.type = "manhattan")
+  classes.squaredeuc <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
+                                             training.data.labels = faces.train.label, 
+                                             testing.data.matrix = faces.test.new.basis,K=i, distance.type = "squared_euclidean")
+  
+  
+  
+  
+  classes.actual <- as.integer(faces.test.label)
+  
+  accuracy.euc <- length(which(classes.euc == classes.actual)) / length(classes.actual)
+  accuracy.euc.list <- c(accuracy.euc.list,accuracy.euc)
+  
+  accuracy.man <-length(which(classes.man == classes.actual)) / length(classes.actual)
+  accuracy.man.list <- c(accuracy.man.list,accuracy.man)
+  
+  accuracy.squaredeuc <- length(which(classes.squaredeuc == classes.actual)) / length(classes.actual)
+  accuracy.squaredeuc.list <- c(accuracy.squaredeuc.list,accuracy.squaredeuc)
+  
+  
+}
+
+
+
+
+
+## now check and plot them
+
+
+
+
+
+
+
+
+
+
 
 faces.train.new.basis <- lapply(X = c(1:320),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
 faces.train.new.basis <- do.call("rbind",faces.train.new.basis)
@@ -172,6 +261,24 @@ faces.train.inputs[c(1,2,3),]
 ##
 
 
+
+
+
+
+
+
+
+
+
+## KNN not for submission ##
+
+faces.train.with.labels <- cbind(faces.train.inputs,actual=as.numeric(faces.train.label))
+
+classes2 <- knn(faces.train.inputs,faces.test.inputs,cl=as.numeric(faces.train.label),k =5,l=3)
+
+all(classes[!is.na(classes2)] == classes2[!is.na(classes2)])
+
+##
 
 
 
