@@ -161,59 +161,53 @@ print(accuracy)
 
 
 ## TRY pca preprocessing
-
-eigenbasis <- find.pca.basis(200,faces.train.inputs)
-
-faces.train.new.basis <- lapply(X = c(1:320),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
+## compute the eigenbasis then move all of the data into this PCA space
+eigenbasis <- find.pca.basis(150,faces.train.inputs)
+faces.train.new.basis <- lapply(X = c(1:320),
+                                FUN=function(x) t(as.numeric(faces.train.inputs[x,]) 
+                                                  - means) %*% eigenbasis)
 faces.train.new.basis <- do.call("rbind",faces.train.new.basis)
-
-faces.test.new.basis <- lapply(X = c(1:80),FUN=function(x) t(as.numeric(faces.test.inputs[x,]) - means) %*% eigenbasis)
+faces.test.new.basis <- lapply(X = c(1:80),
+                               FUN=function(x) t(as.numeric(faces.test.inputs[x,]) -
+                                                   means) %*% eigenbasis)
 faces.test.new.basis <- do.call("rbind",faces.test.new.basis)
-
-
-
-accuracy.euc.list <- c()
+# initialise the list of accuracies
+accuracy.sor.list <- c()
 accuracy.man.list <- c()
-accuracy.squaredeuc.list <- c()
-
-for (i in 1:8){
-  
-  classes.euc <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis , 
+accuracy.sq.list <- c()
+for (i in 1:8){ # these are the values of k we will use
+  # calculate the classes for each distance type
+  classes.sor <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis , 
                                       training.data.labels = faces.train.label, 
-                                      testing.data.matrix = faces.test.new.basis,K=i, distance.type = "euclidean")
+                                      testing.data.matrix = faces.test.new.basis,K=i, 
+                                      distance.type = "sorensen")
   classes.man <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
                                       training.data.labels = faces.train.label, 
-                                      testing.data.matrix = faces.test.new.basis,K=i, distance.type = "manhattan")
-  classes.squaredeuc <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
-                                             training.data.labels = faces.train.label, 
-                                             testing.data.matrix = faces.test.new.basis,K=i, distance.type = "squared_euclidean")
-  
-  
-  
-  
+                                      testing.data.matrix = faces.test.new.basis,K=i,
+                                      distance.type = "manhattan")
+  classes.sq <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
+                                       training.data.labels = faces.train.label, 
+                                      testing.data.matrix = faces.test.new.basis,K=i, 
+                                       distance.type = "squared_euclidean")
   classes.actual <- as.integer(faces.test.label)
-  
-  accuracy.euc <- length(which(classes.euc == classes.actual)) / length(classes.actual)
-  accuracy.euc.list <- c(accuracy.euc.list,accuracy.euc)
-  
-  accuracy.man <-length(which(classes.man == classes.actual)) / length(classes.actual)
+  ## add the accuracy to the list of accuracies..
+  accuracy.sor <- 100*length(which(classes.sor == classes.actual)) / 
+    length(classes.actual)
+  accuracy.sor.list <- c(accuracy.sor.list,accuracy.sor)
+  accuracy.man <- 100*length(which(classes.man == classes.actual)) / 
+    length(classes.actual)
   accuracy.man.list <- c(accuracy.man.list,accuracy.man)
-  
-  accuracy.squaredeuc <- length(which(classes.squaredeuc == classes.actual)) / length(classes.actual)
-  accuracy.squaredeuc.list <- c(accuracy.squaredeuc.list,accuracy.squaredeuc)
-  
-  
+  accuracy.sq <- 100*length(which(classes.sq == classes.actual)) / 
+    length(classes.actual)
+  accuracy.sq.list <- c(accuracy.sq.list,accuracy.sq)
 }
-
-
-
-
 
 ## now check and plot them
 
-
-
-
+# plot all three on same graph
+fullmat <- cbind(sorensen=accuracy.sor.list,manhattan=accuracy.man.list,euclidean=accuracy.sq.list)
+matplot(fullmat, type = c("b"),pch=1,col = 1:3,ylab="accuracy",xlab="k") #plot
+legend("right", legend = colnames(fullmat), col=1:3, pch=1) 
 
 
 
