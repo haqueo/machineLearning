@@ -1,6 +1,6 @@
+### load data ###
+
 setwd("/Users/Omar/Documents/Year4/machineLearning/coursework1")
-
-
 library(rARPACK)
 library(philentropy)
 # I load the raw csv's
@@ -12,19 +12,23 @@ faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                               Faces_Test_Inputs.csv",head=FALSE)
 faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                              Faces_Test_Labels.csv",head=FALSE)
+
+### calculate average face ###
+
+
 # I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value 
 # of pixels corresponding to each image .. I need to use lapply again on the 
 #result because apply gives the matrices in a weird form
 faces.train.inputs.cleaned <- lapply(apply(X=faces.train.inputs, 
                                            MARGIN=1, 
                                            function(x) list(matrix(as.numeric(x), 
-                                           nrow = 112))), "[[", 1)
+                                                                   nrow = 112))), "[[", 1)
 # Here I calculate the average face
 avg.face <- Reduce('+', faces.train.inputs.cleaned) / 
   length(faces.train.inputs.cleaned)
 image(avg.face)
 
-
+########################### calculate pca basis ##############
 find.pca.basis <- function(M,X, return.full.results = FALSE){
   n <- dim(X)[1] # The number of images
   # Turn the input data into a matrix and transpose it
@@ -43,6 +47,8 @@ find.pca.basis <- function(M,X, return.full.results = FALSE){
     return(results$vectors)
   }
 }
+
+## calculate first 5 eigenfaces ##
 eigenbasis <- find.pca.basis(5,faces.train.inputs)
 par(mfrow=c(2,3))
 for (i in 1:5){
@@ -51,6 +57,7 @@ for (i in 1:5){
 }
 par(mfrow=c(1,1))
 
+##### project onto this space ####
 # question 2 Choose a single face and project it into a PCA basis 
 # for dimension M = 5, 10, 50, then plot the results.##
 
@@ -136,7 +143,7 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels,
     # set the classification.
     classification <- sorted.counts$ix[voter]
     classifiers <- c(classifiers,classification)
-
+    
   }
   
   return(classifiers)
@@ -144,23 +151,6 @@ k.nearest.neighbours <- function(training.data.matrix, training.data.labels,
 }
 
 
-# making this work for this specific case
-classes <- k.nearest.neighbours(training.data.matrix = faces.train.inputs, 
-                                training.data.labels = faces.train.label, 
-                                testing.data.matrix = faces.test.inputs,K=5)
-classes.actual <- as.integer(faces.test.label)
-accuracy <- length(which(classes == classes.actual)) / length(classes.actual)
-print(accuracy)
-## 91.25% accuracy with no preprocessing, default K= 4
-## 91.25% accuracy with K = 2
-## 93.75% accuracy with K = 3
-## 95% accuracy with K = 1
-
-
-
-
-
-## TRY pca preprocessing
 ## compute the eigenbasis then move all of the data into this PCA space
 eigenbasis <- find.pca.basis(100,faces.train.inputs)
 faces.train.new.basis <- lapply(X = c(1:320),
@@ -186,9 +176,9 @@ for (i in 1:8){ # these are the values of k we will use
                                       testing.data.matrix = faces.test.new.basis,K=i,
                                       distance.type = "manhattan")
   classes.sq <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis, 
-                                       training.data.labels = faces.train.label, 
-                                      testing.data.matrix = faces.test.new.basis,K=i, 
-                                       distance.type = "squared_euclidean")
+                                     training.data.labels = faces.train.label, 
+                                     testing.data.matrix = faces.test.new.basis,K=i, 
+                                     distance.type = "squared_euclidean")
   classes.actual <- as.integer(faces.test.label)
   ## add the accuracy to the list of accuracies..
   accuracy.sor <- 100*length(which(classes.sor == classes.actual)) / 
@@ -211,103 +201,3 @@ matplot(fullmat, type = c("b"),pch=1,col = 1:3,ylab="accuracy",xlab="k") #plot
 legend("right", legend = colnames(fullmat), col=1:3, pch=1) 
 
 
-
-
-
-
-
-faces.train.new.basis <- lapply(X = c(1:320),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
-faces.train.new.basis <- do.call("rbind",faces.train.new.basis)
-
-faces.test.new.basis <- lapply(X = c(1:80),FUN=function(x) t(as.numeric(faces.test.inputs[x,]) - means) %*% eigenbasis)
-faces.test.new.basis <- do.call("rbind",faces.test.new.basis)
-
-classes <- k.nearest.neighbours(training.data.matrix = faces.train.new.basis,
-                                training.data.labels = faces.train.label, 
-                                testing.data.matrix = faces.test.new.basis,K=5)
-classes.actual <- as.integer(faces.test.label)
-accuracy <- length(which(classes == classes.actual)) / length(classes.actual)
-print(accuracy)
-
-
-## k = 1, 96.25%
-## k = 2, 92.5%
-## k = 3, 93.75%
-## k = 4, 91.25%
-## k = 5, 92.5%
-
-## now basis of size 50
-# k = 1, 95%
-# k = 2, 95%
-# k = 3, 93.75%
-# k = 4, 93.75%
-# k = 5, 91.25%
-lapply(X = c(1:2),FUN=function(x) t(as.numeric(faces.train.inputs[x,]) - means) %*% eigenbasis)
-
-projection.vector <- eigenbasis %*% as.numeric(as.list(projection.vals))
-
-faces.train.inputs[c(1,2,3),]
-
-
-##
-
-
-
-
-
-
-
-
-
-
-
-## KNN not for submission ##
-
-faces.train.with.labels <- cbind(faces.train.inputs,actual=as.numeric(faces.train.label))
-
-classes2 <- knn(faces.train.inputs,faces.test.inputs,cl=as.numeric(faces.train.label),k =5,l=3)
-
-all(classes[!is.na(classes2)] == classes2[!is.na(classes2)])
-
-##
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- ## testing and other stuff 
-
-
-
-training.fake.matrix <- rbind(c(1,2,4,5),c(0,5,10,100),c(1000,2000,3000,4000),c(1,1,1,1),c(2,2,2,2))
-training.fake.labels <- rbind(c(1,2,1,2,1))
-testing.fake.matrix <- rbind(c(1,2,10,100),c(9,8,7,6))
-
-test <- k.nearest.neighbours(training.fake.matrix,training.fake.labels,testing.fake.matrix,K=3,distance="euclid")
-
-
-
-
-
-
-K = 3
-
-training.data.matrix <- training.fake.matrix
-training.data.labels <- training.fake.labels
-testing.data.matrix <- testing.fake.matrix
-
-all.distances <- apply(training.data.matrix, MARGIN=1, function(x) distance(rbind(testing.data.matrix[1,],x),method="euclidean"))
-
-sorted.distances <- sort(all.distances,index.return=TRUE)
-training.data.labels[sorted.distances$ix[1:K]]
-classification <- sort(tabulate(training.data.labels[sorted.distances$ix[1:K]]), index.return=TRUE,decreasing = TRUE)$ix[1]
-classifiers <- c(classifiers,classification)

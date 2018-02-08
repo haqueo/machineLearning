@@ -225,7 +225,7 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 \end{lstlisting}
 
 
-From the graph in figure 4, we see that the mean square error rapidly decreases in linear steps of dimensionality up to around $k = 50$. After this point, the rate of decay is slower and it suggests that taking further dimensions does not improve the mean square error at the same rate. This "elbow point" of 50 is where we should choose our appropriate dimension.
+From the graph in figure 4, we see that the mean square error rapidly decreases in linear steps of dimensionality up to around $k = 50$. After this point, the rate of decay is slower and it suggests that taking further dimensions does not improve the mean square error at the same rate. This "elbow point" of 50 is where we should choose our appropriate dimension. KNN scales well for our problem however, so I will use the less strict cutoff of k = 100.
 
 
 \begin{figure}[t!]
