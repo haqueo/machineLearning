@@ -3,8 +3,6 @@ setwd("/Users/Omar/Documents/Year4/machineLearning/coursework1")
 
 library(rARPACK)
 library(philentropy)
-
-
 # I load the raw csv's
 faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                                Faces_Train_Inputs.csv",head=FALSE)
@@ -14,8 +12,6 @@ faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                               Faces_Test_Inputs.csv",head=FALSE)
 faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                              Faces_Test_Labels.csv",head=FALSE)
-
-
 # I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value 
 # of pixels corresponding to each image .. I need to use lapply again on the 
 #result because apply gives the matrices in a weird form
@@ -23,7 +19,6 @@ faces.train.inputs.cleaned <- lapply(apply(X=faces.train.inputs,
                                            MARGIN=1, 
                                            function(x) list(matrix(as.numeric(x), 
                                            nrow = 112))), "[[", 1)
-
 # Here I calculate the average face
 avg.face <- Reduce('+', faces.train.inputs.cleaned) / 
   length(faces.train.inputs.cleaned)
@@ -31,33 +26,24 @@ image(avg.face)
 
 
 find.pca.basis <- function(M,X, return.full.results = FALSE){
-
   n <- dim(X)[1] # The number of images
-  
   # Turn the input data into a matrix and transpose it
   X.data.matrix <- data.matrix(t(X))
-  
   # Centralise the data matrix
   means <- rowMeans(X.data.matrix) # calculate row means
   data.matrix.centralised <- X.data.matrix - means %*% t(rep(1,n)) # and subtract
-  
   # Calculate the covariance matrix as defined in lectures
   covariance.matrix <- (data.matrix.centralised %*% t(data.matrix.centralised)) / n
-  
   # Now I need to compute the first M eigenvectors/ eigenvalues using the 
   # R package rARPACK
   results <- eigs_sym(covariance.matrix,k=M,which="LM")
-  
   if (return.full.results){
     return(results)
   } else{
     return(results$vectors)
   }
-  
 }
-
 eigenbasis <- find.pca.basis(5,faces.train.inputs)
-
 par(mfrow=c(2,3))
 for (i in 1:5){
   # eigenbasis[,i] corresponds to the i'th eigenvector.
@@ -103,9 +89,10 @@ image(matrix(as.numeric(faces.train.inputs[single.face,]), nrow = 112),
 # First I calculate the full pca basis (and all the assosciated eigenvalues)
 full.results <- find.pca.basis(320,faces.train.inputs,return.full.results = TRUE)
 
-# the mean square error is equal to the total variance minus the sum of the eigenvalues for 
-# components not used (and itself)
-mses <- (cumsum(full.results$values)[length(full.results$values)] - cumsum(full.results$values) )
+# the mean square error is equal to the total variance minus the sum of the 
+# eigenvalues for components not used 
+mses <- (cumsum(full.results$values)[length(full.results$values)] - 
+           cumsum(full.results$values) )
 plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 
 ## Question 4
@@ -113,35 +100,32 @@ plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
 # the face recognition dataset. Make some recommendations regarding how to best set up this 
 # algorithm for this particular application.
 
-k.nearest.neighbours <- function(training.data.matrix, training.data.labels, testing.data.matrix,
-                                 K = 4, distance.type = "squared_euclidean"){
-  
+k.nearest.neighbours <- function(training.data.matrix, training.data.labels, 
+                                 testing.data.matrix,K = 4, 
+                                 distance.type = "squared_euclidean"){
   # Make sure all the data is numeric
   training.data.matrix <- data.matrix(training.data.matrix)
   testing.data.matrix <- data.matrix(testing.data.matrix)
   training.data.labels <- as.numeric(training.data.labels)
-  
   # Initialise the list which will take the classifications
   classifiers <- c()
-  
   # iterate through every row of the testing matrix
   for (i in 1:dim(testing.data.matrix)[1]){
-    
-    # compute the distance of this row of the testing matrix to every other row in the training set
+    # compute the distance of this row of the testing matrix to every other 
+    # row in the training set
     all.distances <- apply(training.data.matrix, MARGIN=1, 
                            function(x) distance(rbind(testing.data.matrix[i,],x), 
                                                 method=distance.type))
     # sort these distances in increasing order.
     sorted.distances <- sort(all.distances,index.return=TRUE)
     
-    # Look at the k closest rows in the training set to this testing row. Whichever classification comes
-    # up the most - is the classification we will give this particular row.
+    # Look at the k closest rows in the training set to this testing row. 
+    # Whichever classification comes up the most - is the classification we 
+    # will give this particular row.
     all.counts <- tabulate(training.data.labels[sorted.distances$ix[1:K]])
     sorted.counts <- sort(all.counts, index.return=TRUE, decreasing=TRUE)
-    
     ## these are all the voters which share the maximum score
     max.votes <- which(sorted.counts$x == sorted.counts$x[1])
-    
     if (length(max.votes) > 1){
       # if it's a split vote, randomly select one.
       voter <- sample(1:length(max.votes),size=1)

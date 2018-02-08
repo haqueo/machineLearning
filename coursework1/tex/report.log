@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2016.2.2)  8 FEB 2018 12:31
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2016.2.2)  8 FEB 2018 13:33
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -762,24 +762,44 @@ File: lstlang2.sty 2014/03/04 1.5c listings language file
 (/usr/local/texlive/2014/texmf-dist/tex/latex/listings/lstlang3.sty
 File: lstlang3.sty 2014/03/04 1.5c listings language file
 )
-LaTeX Font Info:    Try loading font information for OT1+pcr on input line 62.
+LaTeX Font Info:    Try loading font information for OT1+pcr on input line 52.
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-LaTeX Font Info:    Try loading font information for TS1+pcr on input line 67.
+LaTeX Font Info:    Try loading font information for TS1+pcr on input line 55.
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/psnfss/ts1pcr.fd
 File: ts1pcr.fd 2001/06/04 font definitions for TS1/pcr.
 )
-LaTeX Font Info:    Try loading font information for OML+pcr on input line 68.
+LaTeX Font Info:    Try loading font information for OML+pcr on input line 56.
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/psnfss/omlpcr.fd
 File: omlpcr.fd 
 )
 LaTeX Font Info:    Font shape `OML/pcr/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 68.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 56.
 
+Underfull \hbox (badness 10000) in paragraph at lines 76--77
+
+ []
+
+<./images/average.png, id=1, 587.19376pt x 425.59pt>
+File: ./images/average.png Graphic file (type png)
+
+<use ./images/average.png>
+Package pdftex.def Info: ./images/average.png used on input line 81.
+(pdftex.def)             Requested size: 227.5pt x 164.88843pt.
+LaTeX Font Info:    Try loading font information for U+msa on input line 86.
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 86.
+
+(/usr/local/texlive/2014/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
 
 Package Fancyhdr Warning: \headheight is too small (12.0pt): 
  Make it at least 14.49998pt.
@@ -788,31 +808,21 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
 
 [1{/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
-]
-<./images/average.png, id=14, 587.19376pt x 425.59pt>
-File: ./images/average.png Graphic file (type png)
-
-<use ./images/average.png>
-Package pdftex.def Info: ./images/average.png used on input line 96.
-(pdftex.def)             Requested size: 227.5pt x 164.88843pt.
-LaTeX Font Info:    Try loading font information for U+msa on input line 101.
-
-(/usr/local/texlive/2014/texmf-dist/tex/latex/amsfonts/umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-)
-LaTeX Font Info:    Try loading font information for U+msb on input line 101.
-
-(/usr/local/texlive/2014/texmf-dist/tex/latex/amsfonts/umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
-LaTeX Font Info:    Try loading font information for OMS+pcr on input line 104.
-
+ <./images/average.png>]
+LaTeX Font Info:    Try loading font information for OMS+pcr on input line 89.
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/psnfss/omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 104.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 89.
+
+<./images/eigenface.png, id=16, 587.19376pt x 425.59pt>
+File: ./images/eigenface.png Graphic file (type png)
+
+<use ./images/eigenface.png>
+Package pdftex.def Info: ./images/eigenface.png used on input line 125.
+(pdftex.def)             Requested size: 364.00139pt x 263.8241pt.
 
 
 Package Fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -820,13 +830,29 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
  We now make it that large for the rest of the document.
  This may cause the page layout to be inconsistent, however.
 
-[2 <./images/average.png>]
-<./images/eigenface.png, id=24, 587.19376pt x 425.59pt>
-File: ./images/eigenface.png Graphic file (type png)
+[2] <./images/5.png, id=25, 587.19376pt x 425.59pt>
+File: ./images/5.png Graphic file (type png)
+ <use ./images/5.png>
+Package pdftex.def Info: ./images/5.png used on input line 171.
+(pdftex.def)             Requested size: 170.625pt x 123.6647pt.
 
-<use ./images/eigenface.png>
-Package pdftex.def Info: ./images/eigenface.png used on input line 149.
-(pdftex.def)             Requested size: 364.00139pt x 263.8241pt.
+<./images/10.png, id=26, 587.19376pt x 425.59pt>
+File: ./images/10.png Graphic file (type png)
+ <use ./images/10.png>
+Package pdftex.def Info: ./images/10.png used on input line 179.
+(pdftex.def)             Requested size: 170.625pt x 123.6647pt.
+
+<./images/50.png, id=27, 587.19376pt x 425.59pt>
+File: ./images/50.png Graphic file (type png)
+ <use ./images/50.png>
+Package pdftex.def Info: ./images/50.png used on input line 187.
+(pdftex.def)             Requested size: 170.625pt x 123.6647pt.
+
+<./images/orig.png, id=28, 587.19376pt x 425.59pt>
+File: ./images/orig.png Graphic file (type png)
+ <use ./images/orig.png>
+Package pdftex.def Info: ./images/orig.png used on input line 195.
+(pdftex.def)             Requested size: 170.625pt x 123.6647pt.
 
 
 Package Fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -841,29 +867,12 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
  We now make it that large for the rest of the document.
  This may cause the page layout to be inconsistent, however.
 
-[4] <./images/5.png, id=32, 587.19376pt x 425.59pt>
-File: ./images/5.png Graphic file (type png)
- <use ./images/5.png>
-Package pdftex.def Info: ./images/5.png used on input line 197.
-(pdftex.def)             Requested size: 216.12778pt x 156.64758pt.
-
-<./images/10.png, id=33, 587.19376pt x 425.59pt>
-File: ./images/10.png Graphic file (type png)
- <use ./images/10.png>
-Package pdftex.def Info: ./images/10.png used on input line 205.
-(pdftex.def)             Requested size: 216.12778pt x 156.64758pt.
-
-<./images/50.png, id=34, 587.19376pt x 425.59pt>
-File: ./images/50.png Graphic file (type png)
- <use ./images/50.png>
-Package pdftex.def Info: ./images/50.png used on input line 213.
-(pdftex.def)             Requested size: 216.12778pt x 156.64758pt.
-
-<./images/orig.png, id=35, 587.19376pt x 425.59pt>
-File: ./images/orig.png Graphic file (type png)
- <use ./images/orig.png>
-Package pdftex.def Info: ./images/orig.png used on input line 221.
-(pdftex.def)             Requested size: 216.12778pt x 156.64758pt.
+[4 <./images/5.png> <./images/10.png> <./images/50.png> <./images/orig.png>]
+<./images/mse.png, id=42, 587.19376pt x 425.59pt>
+File: ./images/mse.png Graphic file (type png)
+ <use ./images/mse.png>
+Package pdftex.def Info: ./images/mse.png used on input line 233.
+(pdftex.def)             Requested size: 273.00278pt x 197.86482pt.
 
 
 Package Fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -871,35 +880,42 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
  We now make it that large for the rest of the document.
  This may cause the page layout to be inconsistent, however.
 
-[5 <./images/5.png> <./images/10.png> <./images/50.png> <./images/orig.png>]
-(./report.aux) ) 
+[5 <./images/mse.png>]
+
+Package Fancyhdr Warning: \headheight is too small (12.0pt): 
+ Make it at least 14.49998pt.
+ We now make it that large for the rest of the document.
+ This may cause the page layout to be inconsistent, however.
+
+[6] (./report.aux) ) 
 Here is how much of TeX's memory you used:
- 8615 strings out of 493117
- 119271 string characters out of 6135434
- 232887 words of memory out of 5000000
- 11912 multiletter control sequences out of 15000+600000
+ 8642 strings out of 493117
+ 119614 string characters out of 6135434
+ 242155 words of memory out of 5000000
+ 11938 multiletter control sequences out of 15000+600000
  10859 words of font info for 41 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 42i,11n,43p,343b,2104s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2014/texmf-dist/fonts/enc/dvips/base/8r.enc
-}{/usr/local/texlive/2014/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}
-</usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><
-/usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></
-usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></u
-sr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr
-/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/l
-ocal/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/loc
-al/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local
-/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/t
-exlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texl
-ive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></usr/local/texli
-ve/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texliv
-e/2014/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/
-2014/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb>
-Output written on report.pdf (5 pages, 203218 bytes).
+ 42i,12n,43p,533b,2104s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2014/texmf-dist/fonts/enc/dvips/cm-supe
+r/cm-super-ts1.enc}{/usr/local/texlive/2014/texmf-dist/fonts/enc/dvips/base/8r.
+enc}</usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.p
+fb></usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pf
+b></usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb
+></usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><
+/usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></u
+sr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr
+/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/l
+ocal/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/loc
+al/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/
+texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/tex
+live/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></usr/local/texl
+ive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texli
+ve/2014/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive
+/2014/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb>
+Output written on report.pdf (6 pages, 245653 bytes).
 PDF statistics:
- 87 PDF objects out of 1000 (max. 8388607)
- 54 compressed objects within 1 object stream
+ 96 PDF objects out of 1000 (max. 8388607)
+ 59 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 31 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 36 words of extra memory for PDF output out of 10000 (max. 10000000)
 

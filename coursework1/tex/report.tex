@@ -42,28 +42,16 @@
 \lhead{\fancyplain{}{\sf M4S18B2 Machine Learning}}
 \rhead{\fancyplain{}{\sf Omar Haque}}
 \cfoot{}{}
-
-
 \begin{center} \Large
 Machine Learning - Coursework 1 \\[4mm]
 \end{center}
+\textbf{Calculate and plot the average face of the training set, then write a function to find a PCA basis of size M, where the inputs will be M and X, the matrix containing the training set. Clearly describe all aspects of your function, then use it to plot the first 5 eigenfaces of the training set.}
 
-\par \hfill\hrulefill\hfill \vspace{2mm}
-
-
-\vspace{0.3in}
-
-\begin{itemize}
-\item \textbf{Calculate and plot the average face of the training set, then write a function to find a PCA basis of size M, where the inputs will be M and X, the matrix containing the training set. Clearly describe all aspects of your function, then use it to plot the first 5 eigenfaces of the training set.}
-\end{itemize}
 
 To calculate the average face of the training set, I simply calculate the average pixel values for each pixel across the trainings set.
-
 \begin{lstlisting}[linewidth=18.4cm,language=R]
 library(rARPACK)
 library(philentropy)
-
-
 # I load the raw csv's
 faces.train.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                                Faces_Train_Inputs.csv",head=FALSE)
@@ -73,8 +61,6 @@ faces.test.inputs <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                               Faces_Test_Inputs.csv",head=FALSE)
 faces.test.label <- read.csv("./2018_ML_Assessed_Coursework_1_Data/
                              Faces_Test_Labels.csv",head=FALSE)
-
-
 # I turn the input values into a list of 320 matrices, each matrix a 112 x 92 value 
 # of pixels corresponding to each image .. I need to use lapply again on the 
 #result because apply gives the matrices in a weird form
@@ -82,15 +68,14 @@ faces.train.inputs.cleaned <- lapply(apply(X=faces.train.inputs,
                                            MARGIN=1, 
                                            function(x) list(matrix(as.numeric(x), 
                                            nrow = 112))), "[[", 1)
-
 # Here I calculate the average face
 avg.face <- Reduce('+', faces.train.inputs.cleaned) / 
   length(faces.train.inputs.cleaned)
 image(avg.face)
 \end{lstlisting}
+Please see figure 1 for results. \\
 
-\newpage
-\begin{figure}
+\begin{figure}[b]
 \caption{Average face of the training set}
 \centering
 \includegraphics[width=0.5\textwidth]{average}
@@ -102,37 +87,28 @@ The function works exactly as the PCA described in lectures. Calculate the centr
 
 \begin{lstlisting}[linewidth=18.4cm,language=R]
 find.pca.basis <- function(M,X, return.full.results = FALSE){
-
   n <- dim(X)[1] # The number of images
-  
   # Turn the input data into a matrix and transpose it
   X.data.matrix <- data.matrix(t(X))
-  
   # Centralise the data matrix
   means <- rowMeans(X.data.matrix) # calculate row means
   data.matrix.centralised <- X.data.matrix - means %*% t(rep(1,n)) # and subtract
-  
   # Calculate the covariance matrix as defined in lectures
   covariance.matrix <- (data.matrix.centralised %*% t(data.matrix.centralised)) / n
-  
   # Now I need to compute the first M eigenvectors/ eigenvalues using the 
   # R package rARPACK
   results <- eigs_sym(covariance.matrix,k=M,which="LM")
-  
   if (return.full.results){
     return(results)
   } else{
     return(results$vectors)
   }
-  
 }
 \end{lstlisting}
 
-\newpage
 The code below then plots the first 5 eigenfaces of the training set. This means simply calculating the eigenbasis for M = 5, and then plotting the vectors in the resulting eigenbasis.
 \begin{lstlisting}[linewidth=18.4cm,language=R]
 eigenbasis <- find.pca.basis(5,faces.train.inputs)
-
 par(mfrow=c(2,3))
 for (i in 1:5){
   # eigenbasis[,i] corresponds to the i'th eigenvector.
@@ -184,15 +160,13 @@ image(matrix(as.numeric(faces.train.inputs[single.face,]), nrow = 112),
 \end{lstlisting}
 Please see Figure 3 for the results of this code.
 
-\begin{itemize}
-\item \textbf{Plot a graph of the mean squared error of each lower dimensional approximation of this chosen face, with the dimensionality plotted along the x-axis. Is there a clear point at which we can choose a good approximation? Discuss how we should choose the appropriate dimensionality of the approximation.}
-\end{itemize}
 
-\newpage
-
-    \begin{figure*}[t!]
+    \begin{figure}[t!]
+        \caption[ The average and standard deviation of critical parameters ]
+	{\small The projection of training image 1 onto PCA bases of different dimensions} 
         \centering
-        \begin{subfigure}[b]{0.475\textwidth}
+        
+        \begin{subfigure}[b]{0.375\textwidth}
             \centering
             \includegraphics[width=\textwidth]{5}
             \caption[Dimension 5]%
@@ -200,7 +174,7 @@ Please see Figure 3 for the results of this code.
             \label{fig:mean and std of net14}
         \end{subfigure}
         \hfill
-        \begin{subfigure}[b]{0.475\textwidth}  
+        \begin{subfigure}[b]{0.375\textwidth}  
             \centering 
             \includegraphics[width=\textwidth]{10}
             \caption[]%
@@ -208,7 +182,7 @@ Please see Figure 3 for the results of this code.
             \label{fig:mean and std of net24}
         \end{subfigure}
         \vskip\baselineskip
-        \begin{subfigure}[b]{0.475\textwidth}   
+        \begin{subfigure}[b]{0.375\textwidth}   
             \centering 
             \includegraphics[width=\textwidth]{50}
             \caption[]%
@@ -216,16 +190,96 @@ Please see Figure 3 for the results of this code.
             \label{fig:mean and std of net34}
         \end{subfigure}
         \quad
-        \begin{subfigure}[b]{0.475\textwidth}   
+        \begin{subfigure}[b]{0.375\textwidth}   
             \centering 
             \includegraphics[width=\textwidth]{orig}
             \caption[]%
  
             \label{fig:mean and std of net44}
         \end{subfigure}
-        \caption[ The average and standard deviation of critical parameters ]
-        {\small The projection of training image 1 onto PCA bases of different dimensions} 
+
+
         \label{fig:mean and std of nets}
-    \end{figure*}
+    \end{figure}
+
+\begin{itemize}
+\item \textbf{Plot a graph of the mean squared error of each lower dimensional approximation of this chosen face, with the dimensionality plotted along the x-axis. Is there a clear point at which we can choose a good approximation? Discuss how we should choose the appropriate dimensionality of the approximation.}
+\end{itemize}
+\textbf{setup:}
+We can derive a nice form for the mean square error. Let $X$ be our \textbf{centralised} data matrix with $n$ observations of $p$ variables. Consider PCA of $k$ dimensions. Let $\hat{X}$ be the projection of $X$ onto this basis of dimension $k$. Denote the i'th eigenvector of the covariance matrix of $X$ by $Y_{i}$. \\
+\textbf{form of MSE:}
+Now we have $E[||X||^{2}] = \Sigma_{i=1}^{n} Var(X_{i})$. From the spectral decomposition of the covariance matrix we have that $\Sigma_{i=1}^{n} Var(X_{i}) = \Sigma_{i=1}^{n} \lambda_{i}$, where the $\lambda_{i}$ correspond to the eigenvalues of the covariance matrix we calculate during the PCA algorithm. Then we have that the $MSE := E[||X - \hat{X}  ||^{2}] = \Sigma_{i=1}^{n} \lambda_{i} - \Sigma_{i=1}^{k} Var(Y_{i}) =  \Sigma_{i=1}^{n} \lambda_{i} - \Sigma_{i=1}^{k} \lambda_{i} = \Sigma_{i=k+1}^{n} \lambda_{i}$
+
+We approximate the true total variance here by the sum of the first 320 eigenvalues. Please see figure 4 for the results of this code. 
+
+\begin{lstlisting}[linewidth=18.4cm,language=R]
+# First I calculate the full pca basis (and all the assosciated eigenvalues)
+full.results <- find.pca.basis(320,faces.train.inputs,return.full.results = TRUE)
+
+# the mean square error is equal to the total variance minus the sum of the 
+# eigenvalues for components not used 
+mses <- (cumsum(full.results$values)[length(full.results$values)] - 
+           cumsum(full.results$values) )
+plot(mses,xlab="Dimensionality of PCA",ylab="Mean Square Error")
+\end{lstlisting}
+
+
+From the graph in figure 4, we see that the mean square error rapidly decreases in linear steps of dimensionality up to around $k = 50$. After this point, the rate of decay is slower and it suggests that taking further dimensions does not improve the mean square error at the same rate. This "elbow point" of 50 is where we should choose our appropriate dimension.
+
+
+\begin{figure}[t!]
+\caption{Mean Squared Error as a function of PCA dimension}
+\centering
+\includegraphics[width=0.6\textwidth]{mse}
+\end{figure}
+\begin{itemize}
+\item \textbf{Write a function implementing a K-nearest neighbour classifier and investigate its use on the face recognition dataset. Make some recommendations regarding how to best set up this algorithm for this particular application.}
+\end{itemize}
+Here is the code for my K-nearest neighbour classifier 
+\begin{lstlisting}[linewidth=18.4cm,language=R]
+k.nearest.neighbours <- function(training.data.matrix, training.data.labels, 
+                                 testing.data.matrix,K = 4, 
+                                 distance.type = "squared_euclidean"){
+  # Make sure all the data is numeric
+  training.data.matrix <- data.matrix(training.data.matrix)
+  testing.data.matrix <- data.matrix(testing.data.matrix)
+  training.data.labels <- as.numeric(training.data.labels)
+  # Initialise the list which will take the classifications
+  classifiers <- c()
+  # iterate through every row of the testing matrix
+  for (i in 1:dim(testing.data.matrix)[1]){
+    # compute the distance of this row of the testing matrix to every other 
+    # row in the training set
+    all.distances <- apply(training.data.matrix, MARGIN=1, 
+                           function(x) distance(rbind(testing.data.matrix[i,],x), 
+                                                method=distance.type))
+    # sort these distances in increasing order.
+    sorted.distances <- sort(all.distances,index.return=TRUE)
+    
+    # Look at the k closest rows in the training set to this testing row. 
+    # Whichever classification comes up the most - is the classification we 
+    # will give this particular row.
+    all.counts <- tabulate(training.data.labels[sorted.distances$ix[1:K]])
+    sorted.counts <- sort(all.counts, index.return=TRUE, decreasing=TRUE)
+    ## these are all the voters which share the maximum score
+    max.votes <- which(sorted.counts$x == sorted.counts$x[1])
+    if (length(max.votes) > 1){
+      # if it's a split vote, randomly select one.
+      voter <- sample(1:length(max.votes),size=1)
+    } else {
+      # else, there's only one.
+      voter <- 1
+    }
+    # set the classification.
+    classification <- sorted.counts$ix[voter]
+    classifiers <- c(classifiers,classification)
+
+  }
+  
+  return(classifiers)
+  
+}
+
+\end{lstlisting}
 
 \end{document}
