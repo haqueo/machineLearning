@@ -62,20 +62,21 @@ def compute_expectations(X,params,K=10):
     full_n = X.shape[0]*X.shape[1]
     X_cleaned = np.reshape(X,(full_n,dim))
     
+    
+    # initialise E, the matrix of expectations
     E = np.zeros((full_n, K))
     
-    for n in range(full_n):
-        for k in range(K):
-            
-            # this is the numerator, the denominator is just a scaling factor
-            E[n,k] = params["mixtures"][k] * multivariate_normal.pdf(
-                    x=X_cleaned[n,:], 
-                    mean=params["means"][k], 
-                    cov=params["covariances"][k])
 
+    for k in range(K):
+        # this is the numerator, the denominator is just a scaling factor
+        E[:,k] = params["mixtures"][k] * multivariate_normal.pdf(
+                x=X_cleaned, 
+                mean=params["means"][k], 
+                cov=params["covariances"][k])
+
+    # thought: maybe I should be working in log scale to prevent underflow
     
     # normalise across rows
-    
     E = E/E.sum(axis=1, keepdims=True)
     
     return E
@@ -84,10 +85,80 @@ def compute_expectations(X,params,K=10):
     
 
 def maximisation_step(X,expectations,K=10):
-    pass
+
+    # clean the data into an appropriate shape
+    dim = X.shape[2]
+    full_n = X.shape[0]*X.shape[1]
+    X_cleaned = np.reshape(X,(full_n,dim))
+    
+    # initialise params
+    params = {}
+    
+    # initialise the arrays to be returned
+    means = np.zeros((K,dim))
+    covariances = np.zeros((K,dim,dim)) 
+    mixtures = np.zeros(K)
+    
+    for k in range(K):
+        means[k,:] = (X_cleaned.T * expectations[:,k]).sum(axis=1) / np.sum(expectations[:,k])
+#        covariances[k,:,:] = 
+#
+#    for k in range(K):
+#
+#        means[k,:] = (np.array([[float(np.dot(X_cleaned[:, 0], E[:, k]))],
+#                                [float(np.dot(X_cleaned[:, 1], E[:, k]))],
+#                                [float(np.dot(X_cleaned[:, 2], E[:, k]))]])).reshape(dim)        
+#            
+#        params
+#        # means #
+#        A['means_' + str(k)] = (np.array([[float(np.dot(B[0, :], E[:, (k - 1)]))],
+#                                          [float(np.dot(B[1, :], E[:, (k - 1)]))]]) / float(
+#            np.sum(E[:, (k - 1)]))).reshape(2)
+#    
+#        # covars #
+#        A['covars_' + str(k)] = np.array(
+#            [[np.dot(E[:, (k - 1)], np.multiply(B[0, :] - A['means_' + str(k)][0], B[0, :] - A['means_' + str(k)][0])),
+#              np.dot(E[:, (k - 1)], np.multiply(B[0, :] - A['means_' + str(k)][0], B[1, :] - A['means_' + str(k)][1]))],
+#             [np.dot(E[:, (k - 1)], np.multiply(B[1, :] - A['means_' + str(k)][1], B[0, :] - A['means_' + str(k)][0])),
+#              np.dot(E[:, (k - 1)],
+#                     np.multiply(B[1, :] - A['means_' + str(k)][1], B[1, :] - A['means_' + str(k)][1]))]]) / float(
+#            np.sum(E[:, (k - 1)]))
+#    
+#        # mixCoeff #
+#        A['mixCoeff_' + str(k)] = np.sum(E[:, (k - 1)]) / float(full_n)
+#    
+    
+    return params
 
 
 
+def test_npeinsum():
+    
+    Y = np.reshape(range(3*100000),(100000,3))
+    E = np.random.rand(100000,2)
+    
+    
+    ## regular way
+    t0 = time.time()
+    sigma_1_regular = np.zeros((3,3))
+    
+    for n in range(4):
+        sigma_1_regular = sigma_1_regular + E[n,0] * np.outer(Y[n,:],Y[n,:])
+    t1 = time.time()
+    
+    
+    ## now the einsum way
+    t2 = time.time()
+    sigma_1_einsum = np.einsum("a,ai,aj -> ij",E[:,0],Y,Y)
+    t3 = time.time()
+
+    print("Regular way took" + str(t1-t0))
+    print("Einsum way took" + str(t3-t2))
+
+
+    final_value = np.allclose(sigma_1_regular,sigma_1_einsum)
+    print(final_value)
+    return final_value
 
 def run_GMM(X,K=10):
     
@@ -109,5 +180,7 @@ if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
                  "data/question1/FluorescentCells.jpg")
     params = initialise_parameters(img,K=4)
+    
+    E = compute_expectations(img,params,K=4)
 
     
