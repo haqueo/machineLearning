@@ -14,7 +14,7 @@ please email me for access.
 import cv2
 import random
 import numpy as np
-
+from scipy.stats import multivariate_normal
 
 def initialise_parameters(X,K=10):
     
@@ -51,7 +51,37 @@ def initialise_parameters(X,K=10):
     return parameters
 
 def compute_expectations(X,params,K=10):
-    pass
+    """
+    :param X: The data matrix
+    :param params: The current estimate for the parameters
+    :param K: The number of mixtures
+    """
+    
+    # clean the data into an appropriate shape
+    dim = X.shape[2]
+    full_n = X.shape[0]*X.shape[1]
+    X_cleaned = np.reshape(X,(full_n,dim))
+    
+    E = np.zeros((full_n, K))
+    
+    for n in range(full_n):
+        for k in range(K):
+            
+            # this is the numerator, the denominator is just a scaling factor
+            E[n,k] = params["mixtures"][k] * multivariate_normal.pdf(
+                    x=X_cleaned[n,:], 
+                    mean=params["means"][k], 
+                    cov=params["covariances"][k])
+
+    
+    # normalise across rows
+    
+    E = E/E.sum(axis=1, keepdims=True)
+    
+    return E
+    
+    
+    
 
 def maximisation_step(X,expectations,K=10):
     pass
@@ -67,7 +97,7 @@ def run_GMM(X,K=10):
         expectations = compute_expectations(X,K,params)
         params = maximisation_step(X,K,expectations)
     
-    pass
+    return params
 
 
     
