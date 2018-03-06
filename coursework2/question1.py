@@ -15,7 +15,8 @@ import cv2
 import random
 import numpy as np
 from scipy.stats import multivariate_normal
-import time # remove this later
+import time # delete this later
+from sklearn import mixture # delete this later
 
 def initialise_parameters(X,K=10):
     
@@ -74,8 +75,6 @@ def compute_expectations(X,params,K=10):
                 x=X_cleaned, 
                 mean=params["means"][k], 
                 cov=params["covariances"][k])
-
-    # thought: maybe I should be working in log scale to prevent underflow
     
     # normalise across rows
     E = E/E.sum(axis=1, keepdims=True)
@@ -101,47 +100,18 @@ def maximisation_step(X,expectations,K=10):
     mixtures = np.zeros(K)
     
     for k in range(K):
-
-        means[k,:] = (X_cleaned.T * expectations[:,k]).sum(axis=1) / np.sum(expectations[:,k])
-        
-        for n in range(full_n):
-            y_n = X_cleaned[n,:] - means[k,:]
-            covariances[k] = covariances[k] + 
-            
-        
-        # covariance matrix
-        for i in range(dim):
-            for j in range(dim):
-                covariances[k,i,j] =  np.dot(expectations[:,k], 
-                           np.multiply(X_cleaned[:,i] - means[k,i], 
-                                       X_cleaned[:, j] - means[k,j]))
+        # means
+        means[k] = (X_cleaned.T * expectations[:,k]).sum(axis=1) / np.sum(expectations[:,k])
+        # covariances
+        Y = (X_cleaned - means[k]).T # scale the data by the mean and transpose
+        Y = Y * np.sqrt(expectations[:,k])    # multiply by square root of responsibilities 
+        covariances[k] = np.matmul(Y,Y.T) / np.sum(expectations[:,k]) # perform the calculation
+        # mixtures
+        mixtures[k] = np.sum(expectations[:,k]) / float(full_n)
                 
-
-#
-#    for k in range(K):
-#
-#        means[k,:] = (np.array([[float(np.dot(X_cleaned[:, 0], E[:, k]))],
-#                                [float(np.dot(X_cleaned[:, 1], E[:, k]))],
-#                                [float(np.dot(X_cleaned[:, 2], E[:, k]))]])).reshape(dim)        
-#            
-#        params
-#        # means #
-#        A['means_' + str(k)] = (np.array([[float(np.dot(B[0, :], E[:, (k - 1)]))],
-#                                          [float(np.dot(B[1, :], E[:, (k - 1)]))]]) / float(
-#            np.sum(E[:, (k - 1)]))).reshape(2)
-#    
-#        # covars #
-#        A['covars_' + str(k)] = np.array(
-#            [[np.dot(E[:, (k - 1)], np.multiply(B[0, :] - A['means_' + str(k)][0], B[0, :] - A['means_' + str(k)][0])),
-#              np.dot(E[:, (k - 1)], np.multiply(B[0, :] - A['means_' + str(k)][0], B[1, :] - A['means_' + str(k)][1]))],
-#             [np.dot(E[:, (k - 1)], np.multiply(B[1, :] - A['means_' + str(k)][1], B[0, :] - A['means_' + str(k)][0])),
-#              np.dot(E[:, (k - 1)],
-#                     np.multiply(B[1, :] - A['means_' + str(k)][1], B[1, :] - A['means_' + str(k)][1]))]]) / float(
-#            np.sum(E[:, (k - 1)]))
-#    
-#        # mixCoeff #
-#        A['mixCoeff_' + str(k)] = np.sum(E[:, (k - 1)]) / float(full_n)
-#    
+    params["means"] = means
+    params["covariances"] = covariances
+    params["mixtures"] = mixtures
     
     return params
 
@@ -187,8 +157,8 @@ def test_npeinsum():
     Y = Y.T
 
     t6 = time.time()
-    Y = (Y * np.sqrt(E[:,0])).T    
-    sigma_1_matlab = np.matmul(Y.T,Y) / np.sum(E[:,0])
+    Y = Y * np.sqrt(E[:,0])    
+    sigma_1_matlab = np.matmul(Y,Y.T) / np.sum(E[:,0])
     
     t7 = time.time()
 
@@ -202,27 +172,46 @@ def test_npeinsum():
     print(final_value)
     return final_value
 
-def run_GMM(X,K=10):
+def run_GMM(X,K=10,params = -1):
     
-    params = initialise_parameters(X,K)
+    if (params == -1):
+        params = initialise_parameters(X,K)
     
-    for i in range(100):
-        expectations = compute_expectations(X,K,params)
-        params = maximisation_step(X,K,expectations)
+    for i in range(20):
+        expectations = compute_expectations(X,params,K)
+        params = maximisation_step(X,expectations,K)
     
     return params
 
 
     
-
+def test_run_GMM(X,K):
+    
+    dim = X.shape[2]
+    full_n = X.shape[0]*X.shape[1]
+    X_cleaned = np.reshape(X,(full_n,dim))
+    
+    initial_params = initialise_parameters(X,K)
+    new_params_mine = run_GMM(img,K)
+    precisions = np.zeros((K,3,3))
+    for k in range(K):
+        precisions[k] = np.linalg.inv(initial_params["covariances"][k])
+    
+    # turn initial params covariances into precisions
+    
+    clf = mixture.GaussianMixture(n_components=4, covariance_type='full',
+                            weights_init = initial_params["mixtures"],
+                            means_init = initial_params["means"],
+                            precisions_init=precisions,
+                            max_iter=20)
+    clf.fit(X_cleaned)
+    pass
 
 
 
 if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
                  "data/question1/FluorescentCells.jpg")
-    params = initialise_parameters(img,K=4)
-    
-    E = compute_expectations(img,params,K=4)
+    parameters = run_GMM(img,K=4)
 
     
