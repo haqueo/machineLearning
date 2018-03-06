@@ -81,8 +81,7 @@ def compute_expectations(X,params,K=10):
     
     return E
     
-    
-    
+
 
 def maximisation_step(X,expectations,K=10):
 
@@ -203,9 +202,12 @@ def test_run_GMM(X,K):
                             weights_init = initial_params["mixtures"],
                             means_init = initial_params["means"],
                             precisions_init=precisions,
-                            max_iter=20)
+                            max_iter=20,
+                            verbose=1)
     clf.fit(X_cleaned)
     pass
+
+
 
 
 
