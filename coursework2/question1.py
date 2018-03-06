@@ -15,6 +15,7 @@ import cv2
 import random
 import numpy as np
 from scipy.stats import multivariate_normal
+import time # remove this later
 
 def initialise_parameters(X,K=10):
     
@@ -100,8 +101,22 @@ def maximisation_step(X,expectations,K=10):
     mixtures = np.zeros(K)
     
     for k in range(K):
+
         means[k,:] = (X_cleaned.T * expectations[:,k]).sum(axis=1) / np.sum(expectations[:,k])
-#        covariances[k,:,:] = 
+        
+        for n in range(full_n):
+            y_n = X_cleaned[n,:] - means[k,:]
+            covariances[k] = covariances[k] + 
+            
+        
+        # covariance matrix
+        for i in range(dim):
+            for j in range(dim):
+                covariances[k,i,j] =  np.dot(expectations[:,k], 
+                           np.multiply(X_cleaned[:,i] - means[k,i], 
+                                       X_cleaned[:, j] - means[k,j]))
+                
+
 #
 #    for k in range(K):
 #
@@ -134,7 +149,7 @@ def maximisation_step(X,expectations,K=10):
 
 def test_npeinsum():
     
-    Y = np.reshape(range(3*100000),(100000,3))
+    Y = np.random.rand(100000,3)
     E = np.random.rand(100000,2)
     
     
@@ -142,8 +157,10 @@ def test_npeinsum():
     t0 = time.time()
     sigma_1_regular = np.zeros((3,3))
     
-    for n in range(4):
+    for n in range(100000):
         sigma_1_regular = sigma_1_regular + E[n,0] * np.outer(Y[n,:],Y[n,:])
+    
+    sigma_1_regular = sigma_1_regular / (np.sum(E[:,0]))
     t1 = time.time()
     
     
@@ -151,12 +168,37 @@ def test_npeinsum():
     t2 = time.time()
     sigma_1_einsum = np.einsum("a,ai,aj -> ij",E[:,0],Y,Y)
     t3 = time.time()
+    
+    
+    ## now the dot product way
+    t4 = time.time()
+    sigma_1_dot = np.zeros((3,3))
+    # covariance matrix
+    for i in range(3):
+        for j in range(3):
+            sigma_1_dot[i,j] =  np.dot(E[:,0], 
+                       np.multiply(Y[:,i] , 
+                                  Y[:, j])) / (np.sum(E[:,0]))
+    t5 = time.time()
+    
+    
+    # now the matlab way
+    sigma_1_matlab = np.zeros((3,3))
+    Y = Y.T
+
+    t6 = time.time()
+    Y = (Y * np.sqrt(E[:,0])).T    
+    sigma_1_matlab = np.matmul(Y.T,Y) / np.sum(E[:,0])
+    
+    t7 = time.time()
 
     print("Regular way took" + str(t1-t0))
     print("Einsum way took" + str(t3-t2))
+    print("Dot way took" + str(t5-t4))
+    print("Matlab way took" + str(t7-t6))
 
 
-    final_value = np.allclose(sigma_1_regular,sigma_1_einsum)
+    final_value = np.allclose(sigma_1_regular,sigma_1_dot)
     print(final_value)
     return final_value
 
