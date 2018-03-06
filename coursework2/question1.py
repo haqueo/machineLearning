@@ -205,8 +205,28 @@ def test_run_GMM(X,K):
                             max_iter=20,
                             verbose=1)
     clf.fit(X_cleaned)
-    pass
+    
+    did_I_pass = np.all(np.isclose(clf.means_,new_params_mine["means"])) and np.all(np.isclose(clf.covariances_,new_params_mine["covariances"]))
+    
+    return did_I_pass
 
+
+
+def k_means_clustering(X,K=10):
+
+    ## initialise centroids
+    centroids = pass
+    
+    for i in range(20):
+        
+        # Assign labels to each datapoint based on centroids
+        labels = get_closest_centroid(X, centroids)
+        
+        # Assign centroids based on datapoint labels
+        centroids = getCentroids(dataSet, labels, k)
+        
+    # We can get the labels too by calling getLabels(dataSet, centroids)
+    return centroids
 
 
 
