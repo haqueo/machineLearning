@@ -17,6 +17,8 @@ import numpy as np
 from scipy.stats import multivariate_normal
 import time # delete this later
 from sklearn import mixture # delete this later
+from sklearn import cluster # delete this later
+import matplotlib.pyplot as plt
 
 def clean_data(unclean_data):
     dim = unclean_data.shape[2]
@@ -221,6 +223,7 @@ def get_closest_cluster(data, centroids,K):
     for k in range(K):
         norms_matrix[:,k] = np.linalg.norm(data - centroids[k],axis=1)
     data_clustering = np.argmin(norms_matrix,axis=1)        
+
     return data_clustering
 
 def update_centroids(data, data_clustering,K):
@@ -241,7 +244,7 @@ def update_centroids(data, data_clustering,K):
 
     
 
-def k_means_clustering(X,K=10):
+def k_means_clustering(X,K=10,maxiter=200):
 
     # clean the data into an appropriate shape
     X_cleaned, dim, n = clean_data(X)
@@ -250,15 +253,41 @@ def k_means_clustering(X,K=10):
     random.seed(1)
     centroids = X_cleaned[random.sample(range(n),K),:]
     # initialise convergence criteria
+    converged = False
     
-    for i in range(20):
+    for i in range(maxiter):
+        
+        #bookkeeping
+        old_centroids = centroids
+        
         # data assignment step
         data_clustering = get_closest_cluster(X_cleaned, centroids,K)
         # centroids update step
         centroids = update_centroids(X_cleaned, data_clustering,K)
         
+        if (np.allclose(centroids,old_centroids,rtol=1e-3)):
+            print("converged at iteration " + str((i+1)))
+            converged = True
+            break
+        
+    
+    if (not converged):
+        print("Warning, clusters did not converge.")
+    
     return centroids, data_clustering
 
+def test_k_means_clustering(X,K=10):
+    
+    X_cleaned, dim, n = clean_data(X)
+    random.seed(1)
+    centroids = X_cleaned[random.sample(range(n),K),:]
+
+    
+    
+    clst = cluster.KMeans(n_clusters=K,init=centroids,max_iter=35,n_init=1, 
+                          verbose=True)
+    kmeans = clst.fit(X_cleaned)
+    mycentroids, mydata_clustering = k_means_clustering(X,K)
 
 
 
@@ -267,5 +296,8 @@ if __name__ == "__main__":
                  "data/question1/FluorescentCells.jpg")
     # parameters = run_GMM(img,K=4)
     centroids, data_clustering = k_means_clustering(img,K=4)
-
+    myimg = centroids[data_clustering].reshape((1927,2560,3))/float(255)
+    
+    plt.imshow(myimg)
+    cv2.imwrite('kmeans4.jpeg',myimg*255)
     
