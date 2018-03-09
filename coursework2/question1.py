@@ -15,10 +15,9 @@ import cv2
 import random
 import numpy as np
 from scipy.stats import multivariate_normal
-import time # delete this later
-from sklearn import mixture # delete this later
-from sklearn import cluster # delete this later
 import matplotlib.pyplot as plt
+
+## preliminary functions ##
 
 def clean_data(unclean_data):
     dim = unclean_data.shape[2]
@@ -26,6 +25,8 @@ def clean_data(unclean_data):
     data_cleaned = np.reshape(unclean_data,(n,dim))
     return data_cleaned, dim, n
 
+
+## Gaussian mixture models ##
 def initialise_parameters(X,K=10):
     
     # initialise some key components
@@ -118,62 +119,6 @@ def maximisation_step(X,expectations,K=10):
     return params
 
 
-
-def test_npeinsum():
-    
-    Y = np.random.rand(100000,3)
-    E = np.random.rand(100000,2)
-    
-    
-    ## regular way
-    t0 = time.time()
-    sigma_1_regular = np.zeros((3,3))
-    
-    for n in range(100000):
-        sigma_1_regular = sigma_1_regular + E[n,0] * np.outer(Y[n,:],Y[n,:])
-    
-    sigma_1_regular = sigma_1_regular / (np.sum(E[:,0]))
-    t1 = time.time()
-    
-    
-    ## now the einsum way
-    t2 = time.time()
-    sigma_1_einsum = np.einsum("a,ai,aj -> ij",E[:,0],Y,Y)
-    t3 = time.time()
-    
-    
-    ## now the dot product way
-    t4 = time.time()
-    sigma_1_dot = np.zeros((3,3))
-    # covariance matrix
-    for i in range(3):
-        for j in range(3):
-            sigma_1_dot[i,j] =  np.dot(E[:,0], 
-                       np.multiply(Y[:,i] , 
-                                  Y[:, j])) / (np.sum(E[:,0]))
-    t5 = time.time()
-    
-    
-    # now the matlab way
-    sigma_1_matlab = np.zeros((3,3))
-    Y = Y.T
-
-    t6 = time.time()
-    Y = Y * np.sqrt(E[:,0])    
-    sigma_1_matlab = np.matmul(Y,Y.T) / np.sum(E[:,0])
-    
-    t7 = time.time()
-
-    print("Regular way took" + str(t1-t0))
-    print("Einsum way took" + str(t3-t2))
-    print("Dot way took" + str(t5-t4))
-    print("Matlab way took" + str(t7-t6))
-
-
-    final_value = np.allclose(sigma_1_regular,sigma_1_dot)
-    print(final_value)
-    return final_value
-
 def run_GMM(X,K=10,params = -1):
     
     if (params == -1):
@@ -185,31 +130,7 @@ def run_GMM(X,K=10,params = -1):
     
     return params
 
-
-    
-def test_run_GMM(X,K):
-    
-    X_cleaned, dim, n = clean_data(X)
-    
-    initial_params = initialise_parameters(X,K)
-    new_params_mine = run_GMM(img,K)
-    precisions = np.zeros((K,3,3))
-    for k in range(K):
-        precisions[k] = np.linalg.inv(initial_params["covariances"][k])
-    
-    # turn initial params covariances into precisions
-    
-    clf = mixture.GaussianMixture(n_components=4, covariance_type='full',
-                            weights_init = initial_params["mixtures"],
-                            means_init = initial_params["means"],
-                            precisions_init=precisions,
-                            max_iter=20,
-                            verbose=1)
-    clf.fit(X_cleaned)
-    
-    did_I_pass = np.all(np.isclose(clf.means_,new_params_mine["means"])) and np.all(np.isclose(clf.covariances_,new_params_mine["covariances"]))
-    
-    return did_I_pass
+## K means ##
 
 
 def get_closest_cluster(data, centroids,K):
@@ -276,20 +197,7 @@ def k_means_clustering(X,K=10,maxiter=200):
     
     return centroids, data_clustering
 
-def test_k_means_clustering(X,K=10):
-    
-    X_cleaned, dim, n = clean_data(X)
-    random.seed(1)
-    centroids = X_cleaned[random.sample(range(n),K),:]
-
-    
-    
-    clst = cluster.KMeans(n_clusters=K,init=centroids,max_iter=35,n_init=1, 
-                          verbose=True)
-    kmeans = clst.fit(X_cleaned)
-    mycentroids, mydata_clustering = k_means_clustering(X,K)
-
-
+## main ##
 
 if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
