@@ -202,10 +202,8 @@ def k_means_clustering(X,K=10,maxiter=200):
 if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
                  "data/question1/FluorescentCells.jpg")
-    # parameters = run_GMM(img,K=4)
+    parameters = run_GMM(img,K=4)
     centroids, data_clustering = k_means_clustering(img,K=4)
-    myimg = centroids[data_clustering].reshape((1927,2560,3))/float(255)
+    myimg_kmeans = centroids[data_clustering].reshape((1927,2560,3))/float(255)
     
-    plt.imshow(myimg)
-    cv2.imwrite('kmeans4.jpeg',myimg*255)
     
