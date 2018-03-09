@@ -18,14 +18,19 @@ from scipy.stats import multivariate_normal
 import time # delete this later
 from sklearn import mixture # delete this later
 
+def clean_data(unclean_data):
+    dim = unclean_data.shape[2]
+    n = unclean_data.shape[0]*unclean_data.shape[1]
+    data_cleaned = np.reshape(unclean_data,(n,dim))
+    return data_cleaned, dim, n
+
 def initialise_parameters(X,K=10):
     
     # initialise some key components
     random.seed(1)
     parameters = {}
-    dim = X.shape[2]
-    n = X.shape[0]*X.shape[1]
-    X_cleaned = np.reshape(X,(n,dim))
+
+    X_cleaned, dim, n = clean_data(X)
     
     # randomly split the dataset into K clusters.
     cluster_choices = np.array(random.choices(range(K),k=n))
@@ -60,9 +65,7 @@ def compute_expectations(X,params,K=10):
     """
     
     # clean the data into an appropriate shape
-    dim = X.shape[2]
-    full_n = X.shape[0]*X.shape[1]
-    X_cleaned = np.reshape(X,(full_n,dim))
+    X_cleaned, dim, full_n = clean_data(X)
     
     
     # initialise E, the matrix of expectations
@@ -86,9 +89,7 @@ def compute_expectations(X,params,K=10):
 def maximisation_step(X,expectations,K=10):
 
     # clean the data into an appropriate shape
-    dim = X.shape[2]
-    full_n = X.shape[0]*X.shape[1]
-    X_cleaned = np.reshape(X,(full_n,dim))
+    X_cleaned, dim, full_n = clean_data(X)
     
     # initialise params
     params = {}
@@ -186,9 +187,7 @@ def run_GMM(X,K=10,params = -1):
     
 def test_run_GMM(X,K):
     
-    dim = X.shape[2]
-    full_n = X.shape[0]*X.shape[1]
-    X_cleaned = np.reshape(X,(full_n,dim))
+    X_cleaned, dim, n = clean_data(X)
     
     initial_params = initialise_parameters(X,K)
     new_params_mine = run_GMM(img,K)
@@ -211,22 +210,54 @@ def test_run_GMM(X,K):
     return did_I_pass
 
 
+def get_closest_cluster(data, centroids,K):
+    """ 
+    Given the data and current centroids estimate, calculate the cluster for 
+    each datapoint in data
+    Return data clustering
+    """
+    
+    norms_matrix = np.zeros((data.shape[0],K))
+    for k in range(K):
+        norms_matrix[:,k] = np.linalg.norm(data - centroids[k],axis=1)
+    data_clustering = np.argmin(norms_matrix,axis=1)        
+    return data_clustering
+
+def update_centroids(data, data_clustering,K):
+    """ 
+    Given the data and current data clusters, recompute the centroids for 
+    each cluster
+    Return updated centroids
+    """
+    
+    updated_centroids = np.zeros((K,data.shape[1]))
+    
+    for k in range(K):
+        kth_points = data[data_clustering == k,:]
+        centroid_kth = np.mean(kth_points,axis=0)
+        updated_centroids[k] = centroid_kth
+        
+    return(updated_centroids)
+
+    
 
 def k_means_clustering(X,K=10):
 
+    # clean the data into an appropriate shape
+    X_cleaned, dim, n = clean_data(X)
+    
     ## initialise centroids
-    centroids = pass
+    random.seed(1)
+    centroids = X_cleaned[random.sample(range(n),K),:]
+    # initialise convergence criteria
     
     for i in range(20):
+        # data assignment step
+        data_clustering = get_closest_cluster(X_cleaned, centroids,K)
+        # centroids update step
+        centroids = update_centroids(X_cleaned, data_clustering,K)
         
-        # Assign labels to each datapoint based on centroids
-        labels = get_closest_centroid(X, centroids)
-        
-        # Assign centroids based on datapoint labels
-        centroids = getCentroids(dataSet, labels, k)
-        
-    # We can get the labels too by calling getLabels(dataSet, centroids)
-    return centroids
+    return centroids, data_clustering
 
 
 
@@ -234,6 +265,7 @@ def k_means_clustering(X,K=10):
 if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
                  "data/question1/FluorescentCells.jpg")
-    parameters = run_GMM(img,K=4)
+    # parameters = run_GMM(img,K=4)
+    centroids, data_clustering = k_means_clustering(img,K=4)
 
     
