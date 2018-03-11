@@ -67,8 +67,7 @@ def compute_expectations(X_cleaned,params,K=10):
     :param K: The number of mixtures
     """
     
-    # clean the data into an appropriate shape
-    dim = X_cleaned.shape[1]
+
     full_n = X_cleaned.shape[0]
     
     
@@ -94,7 +93,7 @@ def maximisation_step(X_cleaned,expectations,K=10):
 
     # clean the data into an appropriate shape
     dim = X_cleaned.shape[1]
-    n = X_cleaned.shape[0]
+    full_n = X_cleaned.shape[0]
     
     # initialise params
     params = {}
@@ -127,11 +126,11 @@ def run_GMM(X_cleaned,K=10,params = -1,seed=1):
         random.seed(seed)
         params = initialise_parameters(X_cleaned,K)
     
-    for i in range(20):
+    for i in range(30):
         expectations = compute_expectations(X_cleaned,params,K)
         params = maximisation_step(X_cleaned,expectations,K)
     
-    return params
+    return params, expectations
 
 ## K means ##
 
@@ -167,6 +166,18 @@ def update_centroids(data, data_clustering,K):
     return(updated_centroids)
 
     
+def log_likelihood(cleaned_data,K,parameters,expectations):
+    """ 
+    Compute the log likelihood for a Gaussian Mixture Model
+    """
+    pdfs = multivariate_normal.pdf(
+                x=cleaned_data, 
+                mean=parameters["means"][0], 
+                cov=parameters["covariances"][0]) * parameters["mixtures"][0]
+    
+    
+    return np.sum(np.log(np.divide(pdfs,expectations[:,0])))
+    
     
 def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
     """
@@ -176,21 +187,30 @@ def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
     in a gaussian mixture model. Can initialise with k means.
     """
     
-    cell_count = 0
+    n = cleaned_dataset.shape[0]
+    AIC_list = {}
+    BIC_list = {}
     
-    for k in range(cell_lower_bound,cell_upper_bound+1):
+    for k_num in range(cell_lower_bound,cell_upper_bound+1):
         
-    
-    
-    return cell_count
+        params, expectations = run_GMM(cleaned_dataset,K=k_num)
+        log_lik = log_likelihood(cleaned_dataset,k_num,params,expectations)
+        # compute AIC
+        AIC_list[k_num] = -2*log_lik + 2 * k_num
+        # compute BIC
+        BIC_list[k_num] = -2*log_lik + k_num * np.log(n)
+        
+
+    return AIC_list, BIC_list, params, expectations
     
     
     
 
-def k_means_clustering(X,K=10,maxiter=200):
+def k_means_clustering(X_cleaned,K=10,maxiter=200):
 
-    # clean the data into an appropriate shape
-    X_cleaned, dim, n = clean_data(X)
+
+    n = X_cleaned.shape[0]
+    dim = X_cleaned.shape[1]
     
     ## initialise centroids
     random.seed(1)
@@ -231,23 +251,37 @@ if __name__ == "__main__":
                  "data/question1/FluorescentCells.jpg")
     img_cleaned = clean_data(img)
     
-    parameters = run_GMM(img_cleaned,K=3)
+    parameters, expectations = run_GMM(img_cleaned,K=3)
+    myimg_gmm = parameters["means"][np.argmax(expectations,axis=1)]
     
-#    centroids, data_clustering = k_means_clustering(img,K=4)
- #   myimg_kmeans = centroids[data_clustering].reshape((1927,2560,3))/float(255)
+    cell_colour = np.array([ 155.43654699,  175.94150354,   93.08141005])    
+    myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),1,0).reshape((1927,2560))
     
+    cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],np.where(myimg_gmm_blackwhite == 1)[1]))    
     
+    AICS, BICS, params, expectations = count_cells(cleaned_dataset,82,90)
     
-    final_responsibilities = compute_expectations(img,parameters,K=3)
-    myimg_gmm = parameters["means"][np.argmax(final_responsibilities,axis=1)].reshape((1927,2560,3))
-    cv2.imwrite('gmm3.jpeg',myimg_gmm)
-    
-    cell_colour = np.array([ 155.67553937,  176.37473646,   92.06846733])    
-    myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),0,1).reshape((1927,2560))
-    cv2.imwrite('gmm32.blackwhite.jpg',myimg_gmm_blackwhite*255)
-    
-    cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],
-                                       np.where(myimg_gmm_blackwhite == 1)[1]))
+    plt.scatter(cleaned_dataset[:,0],cleaned_dataset[:,1],s=0.1)
+    plt.scatter(centroids[:,0],centroids[:,1],color="red")
     
     
+    
+    ### ERRORS:
+    ## I've chosen all the NON cells, not the actual cells
+    ## I think column stack doesn't work properly
+    
+#    centroids, data_clustering = k_means_clustering(img_cleaned,K=4)
+#    myimg_kmeans = centroids[data_clustering].reshape((1927,2560,3))/float(255)
+#    
+#    
+#    
+#    myimg_gmm = parameters["means"][np.argmax(expectations,axis=1)].reshape((1927,2560,3))
+#    cv2.imwrite('kmeans4test.jpeg',myimg_kmeans*255)
+#    
 
+#    cv2.imwrite('gmm32.blackwhite.jpg',myimg_gmm_blackwhite*255)
+#    
+
+#    
+#    
+#
