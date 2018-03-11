@@ -23,17 +23,17 @@ def clean_data(unclean_data):
     dim = unclean_data.shape[2]
     n = unclean_data.shape[0]*unclean_data.shape[1]
     data_cleaned = np.reshape(unclean_data,(n,dim))
-    return data_cleaned, dim, n
+    return data_cleaned
 
 
 ## Gaussian mixture models ##
-def initialise_parameters(X,K=10):
+def initialise_parameters(X_cleaned,K=10):
     
     # initialise some key components
     random.seed(1)
     parameters = {}
-
-    X_cleaned, dim, n = clean_data(X)
+    dim = X_cleaned.shape[1]
+    n = X_cleaned.shape[0]
     
     # randomly split the dataset into K clusters.
     cluster_choices = np.array(random.choices(range(K),k=n))
@@ -60,7 +60,7 @@ def initialise_parameters(X,K=10):
     
     return parameters
 
-def compute_expectations(X,params,K=10):
+def compute_expectations(X_cleaned,params,K=10):
     """
     :param X: The data matrix
     :param params: The current estimate for the parameters
@@ -68,7 +68,8 @@ def compute_expectations(X,params,K=10):
     """
     
     # clean the data into an appropriate shape
-    X_cleaned, dim, full_n = clean_data(X)
+    dim = X_cleaned.shape[1]
+    full_n = X_cleaned.shape[0]
     
     
     # initialise E, the matrix of expectations
@@ -89,10 +90,11 @@ def compute_expectations(X,params,K=10):
     
 
 
-def maximisation_step(X,expectations,K=10):
+def maximisation_step(X_cleaned,expectations,K=10):
 
     # clean the data into an appropriate shape
-    X_cleaned, dim, full_n = clean_data(X)
+    dim = X_cleaned.shape[1]
+    n = X_cleaned.shape[0]
     
     # initialise params
     params = {}
@@ -119,14 +121,15 @@ def maximisation_step(X,expectations,K=10):
     return params
 
 
-def run_GMM(X,K=10,params = -1):
+def run_GMM(X_cleaned,K=10,params = -1,seed=1):
     
     if (params == -1):
-        params = initialise_parameters(X,K)
+        random.seed(seed)
+        params = initialise_parameters(X_cleaned,K)
     
     for i in range(20):
-        expectations = compute_expectations(X,params,K)
-        params = maximisation_step(X,expectations,K)
+        expectations = compute_expectations(X_cleaned,params,K)
+        params = maximisation_step(X_cleaned,expectations,K)
     
     return params
 
@@ -164,6 +167,25 @@ def update_centroids(data, data_clustering,K):
     return(updated_centroids)
 
     
+    
+def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
+    """
+    We use the AIC methodology described here: 
+        https://uk.mathworks.com/help/stats/tune-gaussian-mixture-models.html
+    in order to find the number of cells, fine tuning the number of components
+    in a gaussian mixture model. Can initialise with k means.
+    """
+    
+    cell_count = 0
+    
+    for k in range(cell_lower_bound,cell_upper_bound+1):
+        
+    
+    
+    return cell_count
+    
+    
+    
 
 def k_means_clustering(X,K=10,maxiter=200):
 
@@ -197,13 +219,35 @@ def k_means_clustering(X,K=10,maxiter=200):
     
     return centroids, data_clustering
 
+
+
+
+
+
 ## main ##
 
 if __name__ == "__main__":
     img = cv2.imread("/Users/Omar/Documents/Year4/machineLearning/coursework2/" + 
                  "data/question1/FluorescentCells.jpg")
-    parameters = run_GMM(img,K=4)
-    centroids, data_clustering = k_means_clustering(img,K=4)
-    myimg_kmeans = centroids[data_clustering].reshape((1927,2560,3))/float(255)
+    img_cleaned = clean_data(img)
+    
+    parameters = run_GMM(img_cleaned,K=3)
+    
+#    centroids, data_clustering = k_means_clustering(img,K=4)
+ #   myimg_kmeans = centroids[data_clustering].reshape((1927,2560,3))/float(255)
     
     
+    
+    final_responsibilities = compute_expectations(img,parameters,K=3)
+    myimg_gmm = parameters["means"][np.argmax(final_responsibilities,axis=1)].reshape((1927,2560,3))
+    cv2.imwrite('gmm3.jpeg',myimg_gmm)
+    
+    cell_colour = np.array([ 155.67553937,  176.37473646,   92.06846733])    
+    myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),0,1).reshape((1927,2560))
+    cv2.imwrite('gmm32.blackwhite.jpg',myimg_gmm_blackwhite*255)
+    
+    cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],
+                                       np.where(myimg_gmm_blackwhite == 1)[1]))
+    
+    
+
