@@ -13,6 +13,7 @@ from pykalman import KalmanFilter
 from hmmlearn import hmm
 import matplotlib
 from hmmlearn.hmm import MultinomialHMM
+from sklearn.preprocessing import normalize
 data = pd.read_csv("/Users/Omar/Documents/Year4/machineLearning/coursework2/data/question3/Ethereum_Prices.csv", names = ["Open", "High", "Low", "Close", "Volume", "Time"])
 
 #kf = KalmanFilter(n_dim_state=2,n_dim_obs=1)
@@ -54,40 +55,40 @@ data = pd.read_csv("/Users/Omar/Documents/Year4/machineLearning/coursework2/data
 #        
 
 
-def normalize(A, dim=None, precision=1e-12):
-    """
-    I replaced the original normalize function with the one given by the instructor on piazza, since
-    the original had a bug.
-    This function is adapted from Kevin Murphy's code for Machine Learning: a Probabilistic Perspective.
-
-    Make the entries of a (multidimensional) array sum to 1
-    A, z = normalize(A) normalize the whole array, where z is the normalizing constant
-    A, z = normalize(A, dim)
-    If dim is specified, we normalize the specified dimension only.
-    dim=0 means each column sums to one
-    dim=1 means each row sums to one
-
-
-    Set any zeros to one before dividing.
-    This is valid, since s=0 iff all A(i)=0, so
-    we will get 0/1=0
-
-    Adapted from https://github.com/probml/pmtk3"""
-    
-    if dim is not None and dim > 1:
-        raise ValueError("Normalize doesn't support more than two dimensions.")
-    
-    z = A.sum(dim)
-    # If z is a scalar, z.shape is an empty tuple and evaluates to False
-    if z.shape:
-        z[np.abs(z) < precision] = 1
-    elif np.abs(z) < precision:
-        return 0, 1
-    
-    if dim == 1:
-        return np.transpose(A.T / z), z
-    else:
-        return A / z, z
+#def normalize(A, dim=None, precision=1e-9):
+#    """
+#    I replaced the original normalize function with the one given by the instructor on piazza, since
+#    the original had a bug.
+#    This function is adapted from Kevin Murphy's code for Machine Learning: a Probabilistic Perspective.
+#
+#    Make the entries of a (multidimensional) array sum to 1
+#    A, z = normalize(A) normalize the whole array, where z is the normalizing constant
+#    A, z = normalize(A, dim)
+#    If dim is specified, we normalize the specified dimension only.
+#    dim=0 means each column sums to one
+#    dim=1 means each row sums to one
+#
+#
+#    Set any zeros to one before dividing.
+#    This is valid, since s=0 iff all A(i)=0, so
+#    we will get 0/1=0
+#
+#    Adapted from https://github.com/probml/pmtk3"""
+#    
+#    if dim is not None and dim > 1:
+#        raise ValueError("Normalize doesn't support more than two dimensions.")
+#    
+#    z = A.sum(dim)
+#    # If z is a scalar, z.shape is an empty tuple and evaluates to False
+#    if z.shape:
+#        z[np.abs(z) < precision] = 1
+#    elif np.abs(z) < precision:
+#        return 0, 1
+#    
+#    if dim == 1:
+#        return np.transpose(A.T / z), z
+#    else:
+#        return A / z, z
 
 def computeSmallB_Discrete(Y, B):
     """Compute the probabilities for the data points Y for a multinomial observation model 
@@ -150,11 +151,12 @@ def ForwardFiltering(A, b, pi, N, T):
     Z = np.zeros((T))
     
     # The below algorithm is given exactly by the pdf notes
-    
-    alpha[:,0], Z[0] = normalize(b[:,0] * pi[:,0],dim=0)
+    normalized = normalize((b[:,0] * pi[:,0]).reshape(-1,1),axis=0,norm='l1',return_norm=True)
+    alpha[:,0], Z[0] = normalized[0].reshape(3),normalized[1]
     
     for t in range(1,T):
-        alpha[:,t], Z[t] = normalize(b[:,t] * np.matmul(np.transpose(A),alpha[:,t-1] ))
+        normalized = normalize((b[:,t] * np.matmul(np.transpose(A),alpha[:,t-1] )).reshape(-1,1),norm='l1',return_norm=True,axis=0)
+        alpha[:,t], Z[t] = normalized[0].reshape(3),normalized[1]
     
     # definition of the logProb
     logProb = np.sum(np.log(Z))
@@ -179,7 +181,7 @@ def ForwardBackwardSmoothing(A, b, pi, N, T):
     # forward filter, then backward filter, then normalize.
     alpha, logProb, Z = ForwardFiltering(A,b,pi,N,T)
     beta = BackwardFiltering(A,b,N,T)
-    gamma, norm = normalize(alpha * beta,dim=0)
+    gamma, norm = normalize(alpha * beta,axis=0,norm='l1',return_norm=True)
     
     return alpha, beta, gamma, logProb, Z
 
@@ -193,7 +195,7 @@ def SmoothedMarginals(A, b, alpha, beta, T, Nhidden):
     marginal = np.zeros((Nhidden, Nhidden, T-1));
 
     for t in range(T-1):
-        marginal[:, :, t] = normalize(A * np.outer(alpha[:, t], np.transpose( (b[:, t+1] * beta[:, t+1]) ) ))[0];
+        marginal[:, :, t] = normalize(A * np.outer(alpha[:, t], np.transpose( (b[:, t+1] * beta[:, t+1]) ) ),norm='l1',return_norm=True)[0];
     
     return marginal
 
@@ -245,12 +247,12 @@ def EM_estimate_multinomial(Y, Nhidden, Niter, epsilon, init):
         # MAXIMISATION:
         # compute pi, A as per the before formulas.
         for k in range(Nhidden):
-            pi[k] = np.sum(gamma_all_l[:,k,1]) / np.sum(gamma_all_l[:,:,1])
+            pi[k] = np.sum(gamma_all_l[0,k,1]) / np.sum(gamma_all_l[0,:,1])
             for j in range(Nhidden):
                 A[j,k] = np.sum(epsilon_all_l[:,j,k,:])
             
         # normalise A
-        A,_ = normalize(A,dim=1) 
+        A,_ = normalize(A,axis=1,norm='l1',return_norm=True) 
         
         # maximisation step for B:
         # use the suggested one hot encoding and then the formula derived.
@@ -258,10 +260,10 @@ def EM_estimate_multinomial(Y, Nhidden, Niter, epsilon, init):
         for l in range(N):
             X = np.zeros((T,3))
             for m in range(T):
-                X[m,Y[l,m]-1] =1
+                X[m,Y[l,m]] =1
             Bnew = Bnew + np.matmul(gamma_all_l[l],X)
         
-        B,_ = normalize(Bnew,dim=1) # normalise B across rows. 
+        B,_ = normalize(Bnew,axis=1,norm='l1',return_norm=True) # normalise B across rows. 
         # update convergence criteria 
         i+=1
         logProbDiff = logProbNew - logProbOld
@@ -362,4 +364,4 @@ if __name__ == "__main__":
     init["B"] = B
     init["pi"] = pi
     
-    A,B,pi = EM_estimate_multinomial(train, 3, 200, 0.01, init)
+    A,B,pi = EM_estimate_multinomial(train, 3, 100, 0.01, init)
