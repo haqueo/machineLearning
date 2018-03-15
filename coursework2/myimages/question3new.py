@@ -1,0 +1,335 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 13 12:16:46 2018
+@author: Omar
+"""
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+import matplotlib
+
+
+
+
+
+def normalize(A, dim=None, precision=1e-20):
+    """
+    The sklearn.preprocessing.normalize function was quite annoying to deal with, 
+    so I'm using this function which is adapted from Kevin Murphy's code for 
+    Machine Learning: a Probabilistic Perspective. It's just a normalization 
+    function.
+    
+    Make the entries of a (multidimensional) array sum to 1
+    A, z = normalize(A) normalize the whole array, where z is the normalizing constant
+    A, z = normalize(A, dim)
+    If dim is specified, we normalize the specified dimension only.
+    dim=0 means each column sums to one
+    dim=1 means each row sums to one
+    Set any zeros to one before dividing.
+    This is valid, since s=0 iff all A(i)=0, so
+    we will get 0/1=0
+    Adapted from https://github.com/probml/pmtk3"""
+    
+    if dim is not None and dim > 1:
+        raise ValueError("Normalize doesn't support more than two dimensions.")
+    
+    z = A.sum(dim)
+    # If z is a scalar, z.shape is an empty tuple and evaluates to False
+    if z.shape:
+        z[np.abs(z) < precision] = 1
+    elif np.abs(z) < precision:
+        return 0, 1
+    
+    if dim == 1:
+        return np.transpose(A.T / z), z
+    else:
+        return A / z, z
+
+def computeSmallB_Discrete(Y, B):
+    """Compute the probabilities for the data points Y for a multinomial observation model 
+        with observation matrix B
+        
+        Input parameters:
+            - Y: the data
+            - B: matrix of observation probabilities
+        Output:
+            - b: vector of observation probabilities
+    """
+    # initialise variables
+    Nhidden = B.shape[0]
+    T = len(Y)
+    b = np.zeros((Nhidden,T))
+    
+    # simply select the appropriate values from the emission matrix B
+    b[:,:] = B[:,Y[:]]
+    
+    return b
+
+def BackwardFiltering(A, b, N, T, Z):
+    """Perform backward filtering.
+        Input parameters:
+            - A: estimated transition matrix (between states)
+            - b: estimated observation probabilities (local evidence vector)
+            - N: number of hidden states
+            - T: length of the sequence
+        Output:
+            - beta: filtered probabilities
+    """
+    
+    # initialise the shape of the entire beta matrix
+    beta_scaled = np.zeros((N,T))
+    # set beta_T
+    beta_scaled[:,T-1] = np.array([1,1])
+    
+    # iterate backwards and find beta_t for t = 1,...,T-1
+    for t in reversed(range(0,T-1)):
+        beta_scaled[:,t] = (A @ (b[:,t+1] * beta_scaled[:,t+1]))/Z[t+1]
+    
+    return beta_scaled
+
+def ForwardFiltering(A, b, pi, N, T):
+    """Filtering using the forward algorithm (Section 17.4.2 of K. Murphy's book)
+    Input:
+      - A: estimated transition matrix
+      - b: estimated observation probabilities (local evidence vector)
+      - pi: initial state distribution pi(j) = p(z_1 = j)
+      - N: number of hidden states
+      - T: length of the sequence
+      
+    Output:
+      - Filtered belief state at time t: alpha = p(z_t|x_1:t)
+      - log p(x_1:T)
+      - Z: normalization constant"""
+    
+    # initialise alpha, Z
+    alpha = np.zeros((N,T))
+    Z = np.zeros((T))
+    
+    # The below algorithm is given exactly by the pdf notes
+    
+    alpha[:,0], Z[0] = normalize(b[:,0] * pi[:,0],dim=0)
+    
+    for t in range(1,T):
+        alpha[:,t], Z[t] = normalize(b[:,t] * np.matmul(np.transpose(A),alpha[:,t-1] ))
+    
+    # definition of the logProb
+    logProb = np.sum(np.log(Z))
+    
+    return alpha, logProb, Z
+
+def ForwardBackwardSmoothing(A, b, pi, N, T):
+    """Smoothing using the forward-backward algorithm.
+    Input:
+      - A: estimated transition matrix
+      - b: local evidence vector (observation probabilities)
+      - pi: initial distribution of states
+      - N: number of hidden states
+      - T: length of the sequence
+    Output:
+      - alpha: filtered belief state as defined in ForwardFiltering
+      - beta: conditional likelihood of future evidence as defined in BackwardFiltering
+      - gamma: gamma_t(j) proportional to alpha_t(j) * beta_t(j)
+      - lp: log probability defined in ForwardFiltering
+      - Z: constant defined in ForwardFiltering"""
+
+    # forward filter, then backward filter, then normalize.
+    alpha, logProb, Z = ForwardFiltering(A,b,pi,N,T)
+    beta_scaled = BackwardFiltering(A,b,N,T,Z)
+    gamma, norm = normalize(alpha * beta_scaled,dim=0)
+    
+    return alpha, beta_scaled, gamma, logProb, Z
+
+
+def SmoothedMarginals(A, b, alpha, beta_scaled, T, Nhidden, Z):
+    """ 
+    Adapted as per the discussion on Piazza
+    """
+    "Two-sliced smoothed marginals p(z_t = i, z_t+1 = j | x_1:T)"
+    marginal = np.zeros((Nhidden, Nhidden, T-1));
+    for t in range(T-1):
+        marginal[:, :, t] = (normalize(A * np.outer(alpha[:, t], np.transpose( (b[:, t+1] * beta_scaled[:, t+1]) ) )/(Z[t+1]))[0]);
+    
+    return marginal
+
+
+def EM_estimate_multinomial(Y, Nhidden, Niter, epsilontol, init):
+    
+    # Dimensions of the data
+    N, T = Y.shape
+        
+    # extract initialisations
+    A = init["A"]
+    B = init["B"]
+    pi = init["pi"]
+    
+    ###############################################
+    # EM algorithm
+    
+    i = 0
+    # Initialize convergence criteria
+    logProbOld = -100000
+    logProbDiff = epsilontol + 1
+    while ((i<Niter)and((logProbDiff > epsilontol))): # and condition on criterion and precision epsilon
+        # Iterate here
+        # EXPECTATION:
+        # iterate through all the sequences, and compute the responsibilities and smoothed marginals
+        b = computeSmallB_Discrete(Y[0], B)
+        ### expectation step
+        alpha, beta, gamma, logProbNew, Z = ForwardBackwardSmoothing(A, b, pi, Nhidden, T)
+        epsilon = SmoothedMarginals(A, b, alpha, beta, T, Nhidden,Z)
+    
+        # MAXIMISATION:
+        # compute pi, A as per the before formulas.
+        for k in range(Nhidden):
+            pi[k] = gamma[k,0] / np.sum(gamma[:,0])
+            for j in range(Nhidden):
+                A[j,k] = np.sum(epsilon[j,k,:])
+            
+        # normalise A
+        A,_ = normalize(A,dim=1) 
+        # maximisation step for B:
+        # use the suggested one hot encoding and then the formula derived.
+        Bnew = np.zeros((Nhidden,2))
+        for l in range(N):
+            X = np.zeros((T,2))
+            for m in range(T):
+                X[m,Y[l,m]] =1
+            Bnew = Bnew + np.matmul(gamma,X)
+        
+        B,_ = normalize(Bnew,dim=1) # normalise B across rows. 
+        # update convergence criteria 
+        logProbDiff = logProbNew - logProbOld
+        logProbOld = logProbNew
+        i+=1
+
+        
+    return A, B, pi
+
+
+def multiHMMtest(data_with_thresholding,train_split=200):
+    
+    
+    train = data_with_thresholding["difference_threshold"][0:train_split]
+    train = train.reshape(1,train_split)
+    # initialise parameters somehow
+    init = {}
+    
+    A = np.array([[0.4,0.6],[0.45,0.55]])
+    B = np.array([[0.4,0.6],[0.45,0.55]])
+    pi = np.array([[0.45],[0.55]])
+    
+    init["A"] = A
+    init["B"] = B
+    init["pi"] = pi
+
+    A,B,pi = EM_estimate_multinomial(train, 2, 100, 0.1, init)
+    
+
+    model_predictions = []
+    
+    for i in range(train_split,1440):
+        # predict 201th to 1440th values
+        
+        # initialise with last values
+        init = {}
+        init["A"] = A
+        init["B"] = B
+        init["pi"] = pi
+
+        # perform EM on all previous values (not including i)
+        A,B,pi= EM_estimate_multinomial(data_with_thresholding["difference_threshold"][0:i].reshape(1,-1),
+                                        2, 100, 0.1, init)
+        
+        Ydummy0 = np.append(data_with_thresholding["difference_threshold"][0:i].reshape(1,-1)[0],0).reshape(1,-1)
+        Ydummy1 = np.append(data_with_thresholding["difference_threshold"][0:i].reshape(1,-1)[0],1).reshape(1,-1)
+
+        b0 = computeSmallB_Discrete(Ydummy0[0], B)
+        b1 = computeSmallB_Discrete(Ydummy1[0], B)
+
+        
+        alpha0, logProb0, Z0 = ForwardFiltering(A,b0,pi,2,i+1)
+        alpha1, logProb1, Z1 = ForwardFiltering(A,b1,pi,2,i+1)
+
+        
+        # make prediction based on whichever logProb is highest.
+        predictions = np.argmax(np.array([Z0[len(Z0)-1],Z1[len(Z1)-1]]))
+
+        model_predictions.append(predictions)
+    return model_predictions, A,B,pi
+
+
+def analyse(actual,predicted):
+    
+    
+    # accuracy score
+    accuracy = 100*np.sum(np.equal(predicted,actual))/(len(actual))
+    print(accuracy)
+    # produce a heatmap/confusion matrix    
+    conf = np.zeros((2,2))
+    
+    for i in range(len(predicted)):
+        conf[actual[i]][predicted[i]]+=1
+            
+    plt.matshow(conf/len(actual))
+    plt.colorbar()
+    plt.xlabel("predicted")
+    plt.ylabel("actual")
+    plt.show()
+    
+    plt.scatter(range(len(predicted)),predicted,s=0.1)
+    plt.xlabel("hour index")
+    plt.ylabel("classification")
+
+    plt.show()
+    
+    
+    
+
+if __name__ == "__main__":
+    predictions1,predictions2,A,B,pi = multiHMMtest(data,720)
+    print(A,B,pi)
+    analyse(actual,predictions1)        
+        
+#
+#    fig = plt.figure()
+#    plt.plot(data["Close"])
+#    fig.savefig('ethereum.png') 
+
+#    data["Difference"] = np.zeros(1440)
+#    for i in range(1,1439):    
+#        data.set_value(i,"Difference",data["Close"][i + 1] - data["Close"][i])
+#
+#    test = np.where(data["Difference"] >= 0,1,0)
+#    data["difference_threshold"] = test
+#    
+#    
+##    
+#    fig2 = plt.figure()
+#    plt.plot(range(1440),data["Difference"])
+#    fig2.savefig("priceinrement.png")
+#    
+#    data = pd.read_csv("H:\hereeeeMachineLeaning\machineLearning-master\coursework2\data\question3\Ethereum_Prices.csv", names = ["Open", "High", "Low", "Close", "Volume", "Time"])
+#        
+#
+#
+#        
+#    train = data["difference_threshold"][0:1440]
+#    train = train.reshape(1,1440)
+#    # initialise parameters somehow
+#    init = {}
+#    
+#    A = np.array([[0.4,0.6],[0.45,0.55]])
+#    B = np.array([[0.4,0.6],[0.45,0.55]])
+#    pi = np.array([[0.45],[0.55]])
+#    
+#    init["A"] = A
+#    init["B"] = B
+#    init["pi"] = pi
+#    
+#    A,B,pi = EM_estimate_multinomial(train, 2, 300, 5, init)
+    
+

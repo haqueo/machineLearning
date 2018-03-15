@@ -292,6 +292,7 @@ def produce_images():
 
 
 
+
 ## main ##
 
 if __name__ == "__main__":
@@ -299,10 +300,10 @@ if __name__ == "__main__":
                  "data/question1/FluorescentCells.jpg")
     img_cleaned = clean_data(img)
     
-    parameters, expectations = run_GMM(img_cleaned,K=2)
+    parameters, expectations = run_GMM(img_cleaned,K=3)
     myimg_gmm = parameters["means"][np.argmax(expectations,axis=1)]
     
-    cell_colour = np.array([ 152.91838877,  163.84088117,  109.8871029 ])    
+    cell_colour = np.array([ 155.39698821,  175.87112501,   93.20177927])    
     myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),1,0).reshape((1927,2560))
 #    
     cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],np.where(myimg_gmm_blackwhite == 1)[1]))    
