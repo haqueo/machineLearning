@@ -208,19 +208,20 @@ def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
 
 def k_means_clustering(X_cleaned,K=10,maxiter=200):
 
-
+    # get dimensions of data
     n = X_cleaned.shape[0]
     dim = X_cleaned.shape[1]
     
-    ## initialise centroids
+    ## initialise centroids randomly
     random.seed(1)
     centroids = X_cleaned[random.sample(range(n),K),:]
+    
     # initialise convergence criteria
     converged = False
     
     for i in range(maxiter):
         
-        #bookkeeping
+        # bookkeeping, simply keep track of the old centroids
         old_centroids = centroids
         
         # data assignment step
@@ -233,7 +234,6 @@ def k_means_clustering(X_cleaned,K=10,maxiter=200):
             converged = True
             break
         
-    
     if (not converged):
         print("Warning, clusters did not converge.")
     
