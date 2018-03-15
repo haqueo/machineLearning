@@ -197,19 +197,20 @@ def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
     n = cleaned_dataset.shape[0]
     AIC_list = {}
     BIC_list = {}
+    parameters = {}
     
     
     # initialise using kmeans
     centroids, data_clustering = k_means_clustering(cleaned_dataset,K=cell_lower_bound)
     # initialise the arrays to be returned
     means = centroids
-    covariances = np.zeros((K,dim,dim)) 
-    mixtures = np.zeros(K)
+    covariances = np.zeros((cell_lower_bound,2,2)) 
+    mixtures = np.zeros(cell_lower_bound)
 
     
     # go through this initial clustering and initialise the parameters
-    for i in range(K):
-        X_k = X_cleaned[data_clustering == i,:]
+    for i in range(cell_lower_bound):
+        X_k = cleaned_dataset[data_clustering == i,:]
         covariances[i,:,:] = np.cov(X_k.transpose())
         mixtures[i] = X_k.shape[0]/n
     
@@ -220,7 +221,7 @@ def count_cells(cleaned_dataset, cell_lower_bound, cell_upper_bound):
     
     
     for k_num in range(cell_lower_bound,cell_upper_bound+1):
-        
+        print("k is " + str(k_num))
 
         params, expectations = run_GMM(cleaned_dataset,K=k_num,params=parameters)
         log_lik = log_likelihood(cleaned_dataset,k_num,params,expectations)
@@ -298,17 +299,15 @@ if __name__ == "__main__":
                  "data/question1/FluorescentCells.jpg")
     img_cleaned = clean_data(img)
     
-    produce_images()
+    parameters, expectations = run_GMM(img_cleaned,K=2)
+    myimg_gmm = parameters["means"][np.argmax(expectations,axis=1)]
     
-#    parameters, expectations = run_GMM(img_cleaned,K=3)
-#    myimg_gmm = parameters["means"][np.argmax(expectations,axis=1)]
+    cell_colour = np.array([ 152.91838877,  163.84088117,  109.8871029 ])    
+    myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),1,0).reshape((1927,2560))
 #    
-#    cell_colour = np.array([ 155.43654699,  175.94150354,   93.08141005])    
-#    myimg_gmm_blackwhite = np.where(np.isclose(myimg_gmm,cell_colour).all(axis=1),1,0).reshape((1927,2560))
+    cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],np.where(myimg_gmm_blackwhite == 1)[1]))    
 #    
-#    cleaned_dataset = np.column_stack(((np.where(myimg_gmm_blackwhite == 1))[0],np.where(myimg_gmm_blackwhite == 1)[1]))    
-#    
-#    AICS, BICS, params, expectations = count_cells(cleaned_dataset,82,90)
+    AICS, BICS, params, expectations = count_cells(cleaned_dataset,82,90)
 #    
 #    plt.scatter(cleaned_dataset[:,0],cleaned_dataset[:,1],s=0.1)
 #    plt.scatter(centroids[:,0],centroids[:,1],color="red")

@@ -14,50 +14,15 @@ import matplotlib
 from hmmlearn.hmm import MultinomialHMM
 data = pd.read_csv("/Users/Omar/Documents/Year4/machineLearning/coursework2/data/question3/Ethereum_Prices.csv", names = ["Open", "High", "Low", "Close", "Volume", "Time"])
 
-#kf = KalmanFilter(n_dim_state=2,n_dim_obs=1)
-#
-#exp = kf.em(data["Open"])
-#
-#quant_means, quant_covs = kf.filter(data["Open"])
-#
-#plt.plot(quant_means[:,0])
-#plt.plot(data["Open"])
-#plt.show()
-#
-#
-
-
-#
-#
-#model = hmm.GaussianHMM(n_components=3)
-#model.fit(data["Open"])
-#
-#colours = []
-#
-## define the colormap
-#cmap = plt.cm.jet
-## extract all colors from the .jet map
-#cmaplist = [cmap(i) for i in range(cmap.N)]
-## create the new map
-#cmap = cmap.from_list('Custom cmap', cmaplist, cmap.N)
-#
-#
-#for i in range(1440):
-#    if (data["difference_threshold"][i] == "same"):
-#        colours.append("red")
-#    elif (data["difference_threshold"][i] == "up"):
-#            colours.append("green")
-#    else:
-#        colours.append("blue")
-#            
-#        
 
 
 def normalize(A, dim=None, precision=1e-20):
     """
-    I replaced the original normalize function with the one given by the instructor on piazza, since
-    the original had a bug.
-    This function is adapted from Kevin Murphy's code for Machine Learning: a Probabilistic Perspective.
+    The sklearn.preprocessing.normalize function was quite annoying to deal with, 
+    so I'm using this function which is adapted from Kevin Murphy's code for 
+    Machine Learning: a Probabilistic Perspective. It's just a normalization 
+    function.
+    
     Make the entries of a (multidimensional) array sum to 1
     A, z = normalize(A) normalize the whole array, where z is the normalizing constant
     A, z = normalize(A, dim)
@@ -184,9 +149,7 @@ def SmoothedMarginals(A, b, alpha, beta_scaled, T, Nhidden, Z):
     Adapted as per the discussion on Piazza
     """
     "Two-sliced smoothed marginals p(z_t = i, z_t+1 = j | x_1:T)"
-    
     marginal = np.zeros((Nhidden, Nhidden, T-1));
-
     for t in range(T-1):
         marginal[:, :, t] = (normalize(A * np.outer(alpha[:, t], np.transpose( (b[:, t+1] * beta_scaled[:, t+1]) ) )/(Z[t+1]))[0]);
     
@@ -197,55 +160,37 @@ def EM_estimate_multinomial(Y, Nhidden, Niter, epsilon, init):
     
     # Dimensions of the data
     N, T = Y.shape
-    
-    # Initialization
-    
-    # Initial transition matrix should be stochastic (rows sum to 1)
+        
+    # extract initialisations
     A = init["A"]
-    
-    # Observation matrix B
     B = init["B"]
-    
-    # Class prior
     pi = init["pi"]
     
     ###############################################
     # EM algorithm
     
     i = 0
-    # Initialize convergence criterion here
-    # calculate the difference in the logProbability at each iteration. If this is 
-    # less than epsilon then we assume we've converged to the local maximum.
-
-    
-    
-    while (i<Niter): # and condition on criterion and precision epsilon
+    # Initialize convergence criteria
+    logProbOld = -100000
+    logProbDiff = epsilon + 1
+    while ((i<Niter)and((logProbDiff > epsilon))): # and condition on criterion and precision epsilon
         # Iterate here
-        
-        
-
-        gamma_all_l = np.zeros((N,Nhidden,T))
-        epsilon_all_l = np.zeros((N,Nhidden, Nhidden, T-1))
-
         # EXPECTATION:
         # iterate through all the sequences, and compute the responsibilities and smoothed marginals
         b = computeSmallB_Discrete(Y[0], B)
         ### expectation step
         alpha, beta, gamma, logProbNew, Z = ForwardBackwardSmoothing(A, b, pi, Nhidden, T)
-        gamma_all_l[0] = gamma
-        epsilon_all_l[0] = SmoothedMarginals(A, b, alpha, beta, T, Nhidden,Z)
+        epsilon = SmoothedMarginals(A, b, alpha, beta, T, Nhidden,Z)
     
-        
         # MAXIMISATION:
         # compute pi, A as per the before formulas.
         for k in range(Nhidden):
-            pi[k] = gamma_all_l[0][k,0] / np.sum(gamma_all_l[0][:,0])
+            pi[k] = gamma[k,0] / np.sum(gamma[:,0])
             for j in range(Nhidden):
-                A[j,k] = np.sum(epsilon_all_l[:,j,k,:])
+                A[j,k] = np.sum(epsilon[j,k,:])
             
         # normalise A
         A,_ = normalize(A,dim=1) 
-        
         # maximisation step for B:
         # use the suggested one hot encoding and then the formula derived.
         Bnew = np.zeros((Nhidden,2))
@@ -253,25 +198,14 @@ def EM_estimate_multinomial(Y, Nhidden, Niter, epsilon, init):
             X = np.zeros((T,2))
             for m in range(T):
                 X[m,Y[l,m]] =1
-            Bnew = Bnew + np.matmul(gamma_all_l[l],X)
+            Bnew = Bnew + np.matmul(gamma,X)
         
         B,_ = normalize(Bnew,dim=1) # normalise B across rows. 
         # update convergence criteria 
+        logProbDiff = logProbNew - logProbOld
+        logProbOld = logProbNew
         i+=1
 
-        
-        
-        
-        
-        ####### test where the underflow is ####
-        print("i is " + str(i))
-        print(print("pi is " + str(pi)))
-        print("num is " + str(gamma_all_l[0][k,0]))
-        print("dum is " + str(np.sum(gamma_all_l[0][:,0])))
-        print("alpha first column is " + str(alpha[:,0]))
-        print("beta first column is " + str(beta[:,0]))
-        
-        
         
     return A, B, pi
 
@@ -305,6 +239,7 @@ def multiHMMtest():
 
     A,B,pi = EM_estimate_multinomial(train, 2, 100, 0.1, init)
     
+    model_predictions = []
     correct = 0
     incorrect = 0
     
@@ -340,10 +275,7 @@ def multiHMMtest():
         # make prediction based on whichever logProb is highest.
         
         prediction = np.argmax(np.array([logProb0,logProb1]))
-        print("prediction is:")
-        print(prediction)
-        print("actual is:")
-        print(data["difference_threshold"][i])
+        model_predictions.append(prediction)
         
         if prediction == data["difference_threshold"][i]:
             correct = correct + 1
